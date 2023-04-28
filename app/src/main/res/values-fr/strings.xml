@@ -1,0 +1,10 @@
+<resources>
+	<string name="app_name">Flash Player Revival</string>
+	<string name="welcome">Bienvenue</string>
+	<string name="cred">Entrez vos identifiants pour vous connecter</string>
+	<string name="mail">Email</string>
+	<string name="password">Mot de passe</string>
+	<string name="signin">Se connecter</string>
+	<string name="no_account">Vous n\'avez pas de compte ?</string>
+	<string name="signup">S\'inscrire</string>
+</resources>
