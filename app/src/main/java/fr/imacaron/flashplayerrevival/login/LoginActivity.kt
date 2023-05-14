@@ -5,109 +5,139 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.core.os.bundleOf
 import androidx.core.view.WindowCompat
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import fr.imacaron.flashplayerrevival.MainActivity
 import fr.imacaron.flashplayerrevival.R
-import fr.imacaron.flashplayerrevival.components.BorderCard
-import fr.imacaron.flashplayerrevival.components.PaleText
-import fr.imacaron.flashplayerrevival.components.TextField
+import fr.imacaron.flashplayerrevival.api.dto.LoginResponse
+import fr.imacaron.flashplayerrevival.api.dto.Register
+import fr.imacaron.flashplayerrevival.api.error.LoginError
+import fr.imacaron.flashplayerrevival.api.resources.Auth
 import fr.imacaron.flashplayerrevival.ui.theme.FlashPlayerRevivalTheme
 import fr.imacaron.flashplayerrevival.utils.keyboardAsState
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.compression.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.resources.*
+import io.ktor.client.plugins.resources.Resources
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.resources.*
+import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.*
 
-class LoginActivity: ComponentActivity() {
+class LoginActivity : ComponentActivity() {
+	private val httpClient = HttpClient {
+		install(Resources)
+		install(ContentNegotiation){
+			json()
+		}
+		defaultRequest {
+			url {
+				protocol = URLProtocol.HTTPS
+				host = "api.flash-player-revival.fr"
+				path("api/")
+			}
+		}
+		expectSuccess = true
+		HttpResponseValidator {
+			handleResponseExceptionWithRequest { exception, request ->
+				val clientException = exception as? ClientRequestException ?: return@handleResponseExceptionWithRequest
+				val exceptionResponse = clientException.response
+				if(exceptionResponse.status == HttpStatusCode.Unauthorized){
+					throw LoginError()
+				}
+			}
+		}
+	}
+
+	val dataStore: DataStore<Preferences> by preferencesDataStore(name = "login")
+
+	val mailKey = stringPreferencesKey("email")
+	val passwordKey = stringPreferencesKey("password")
+
 	@SuppressLint("SourceLockedOrientationActivity")
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 		WindowCompat.setDecorFitsSystemWindows(window, false)
 		setContent {
+			val loginNav = rememberNavController()
 			val open by keyboardAsState()
-			val (cardPlacement, pt) = if(open){
+			val (cardPlacement, pt) = if (open) {
 				Arrangement.Top to 64.dp
-			}else {
+			} else {
 				Arrangement.Center to 0.dp
 			}
 			FlashPlayerRevivalTheme {
 				Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
 					Column(Modifier.padding(top = pt).height(10.dp), verticalArrangement = cardPlacement) {
 						Logo()
-						LoginCard()
+						NavHost(loginNav, "login"){
+							composable("login") { LoginCard { loginNav.navigate("signin") } }
+							composable("signin") { SignInCard { loginNav.navigate("login") } }
+						}
 					}
 				}
 			}
 		}
 	}
-}
 
-@Composable
-fun Logo(){
-	Row(Modifier.fillMaxWidth().padding(bottom = 32.dp), horizontalArrangement = Arrangement.Center) {
-		Image(painterResource(R.drawable.banner), "Banner")
+	suspend fun connect(mail: String, password: String): Boolean {
+		return try {
+			val token: LoginResponse = httpClient.post(Auth.Login()) {
+				contentType(ContentType.Application.Json)
+				setBody(Register(mail, password))
+			}.body()
+			startActivity(Intent(this, MainActivity::class.java), bundleOf("token" to token.token))
+			true
+		}catch (_: LoginError){
+			withContext(Dispatchers.Main){
+				Toast.makeText(this@LoginActivity, R.string.login_error, Toast.LENGTH_LONG).show()
+			}
+			false
+		}
 	}
-}
 
-@Composable
-fun LoginCard(){
-	val context = LocalContext.current
-	var mail by remember { mutableStateOf("") }
-	var password by remember { mutableStateOf("") }
-	BorderCard(Modifier.padding(8.dp)){
-		Column(Modifier.fillMaxWidth().padding(32.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-			Column(Modifier.fillMaxWidth()) {
-				Text(stringResource(R.string.welcome), style = MaterialTheme.typography.displayMedium)
-				Text(stringResource(R.string.cred), style = MaterialTheme.typography.titleLarge)
-			}
-			TextField(
-				mail,
-				{ mail = it },
-				Modifier.fillMaxWidth(),
-				{ Text(stringResource(R.string.mail)) },
-				keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
-				singleLine = true
-			)
-			TextField(password,
-				{ password = it },
-				Modifier.fillMaxWidth(),
-				{ Text(stringResource(R.string.password)) },
-				visualTransformation = PasswordVisualTransformation(),
-				keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-				keyboardActions = KeyboardActions(onDone = { connect(mail, password, context) }),
-				singleLine = true
-			)
-			Button({ connect(mail, password, context) }, Modifier.fillMaxWidth().shadow(10.dp, shape = MaterialTheme.shapes.extraLarge, spotColor = MaterialTheme.colorScheme.primary)) {
-				Text(stringResource(R.string.signin))
-			}
-			Row(verticalAlignment = Alignment.CenterVertically) {
-				PaleText(stringResource(R.string.no_account))
-				TextButton({}){
-					Text(stringResource(R.string.signup))
-				}
-			}
+	suspend fun register(mail: String, password: String): Boolean{
+		return try {
+			val token: LoginResponse = httpClient.post(Auth.Register()) {
+				contentType(ContentType.Application.Json)
+				setBody(Register(mail, password))
+			}.body()
+			startActivity(Intent(this, MainActivity::class.java), bundleOf("token" to token.token))
+			true
+		}catch (_: LoginError){
+			false
 		}
 	}
 }
 
-fun connect(mail: String, password: String, context: Context){
-	println("mail = $mail, password = $password")
-	context.startActivity(Intent(context, MainActivity::class.java))
-
+@Composable
+fun Logo() {
+	Row(Modifier.fillMaxWidth().padding(bottom = 32.dp), horizontalArrangement = Arrangement.Center) {
+		Image(painterResource(R.drawable.banner), "Banner")
+	}
 }
