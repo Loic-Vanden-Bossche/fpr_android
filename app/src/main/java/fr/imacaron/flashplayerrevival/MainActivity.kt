@@ -23,8 +23,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import fr.imacaron.flashplayerrevival.components.RoundedTextField
 import fr.imacaron.flashplayerrevival.ui.theme.FlashPlayerRevivalTheme
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,7 +35,7 @@ class MainActivity : ComponentActivity() {
             val scope = rememberCoroutineScope()
             FlashPlayerRevivalTheme {
                 ModalNavigationDrawer({
-                    NavDrawerSheet()
+                    NavDrawerSheet(drawerState)
                 }, drawerState = drawerState){
                     Scaffold(topBar = { TopBar { scope.launch { drawerState.open() }}} ) {
                         Surface(
@@ -50,17 +51,25 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(DelicateCoroutinesApi::class)
 @Composable
-fun NavDrawerSheet(){
+fun NavDrawerSheet(drawerState: DrawerState){
     var selected by remember { mutableStateOf(0) }
+    var search by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
     ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.primary, drawerShape = RectangleShape) {
-        fr.imacaron.flashplayerrevival.components.TextField("", {})
+        RoundedTextField(search, { search = it }, label = { Text(stringResource(R.string.search_contact)) })
         LazyColumn {
             items(5){
                 if(selected == it){
                     SelectedLine("Fred")
                 }else{
-                    Line("Fred"){ selected = it }
+                    Line("Fred"){
+                        selected = it
+                        scope.launch {
+                            drawerState.close()
+                        }
+                    }
                 }
             }
         }

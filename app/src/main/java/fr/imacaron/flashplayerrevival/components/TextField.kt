@@ -8,6 +8,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.input.VisualTransformation
 
 @Composable
@@ -21,7 +22,8 @@ fun TextField(
 	visualTransformation: VisualTransformation = VisualTransformation.None,
 	keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
 	keyboardActions: KeyboardActions = KeyboardActions.Default,
-	singleLine: Boolean = false
+	singleLine: Boolean = false,
+	shape: Shape = TextFieldDefaults.shape
 ){
 	TextField(
 		value,
@@ -50,6 +52,7 @@ fun TextField(
 			errorIndicatorColor = MaterialTheme.colorScheme.onSurface,
 			errorTrailingIconColor = MaterialTheme.colorScheme.onSurface
 		),
-		singleLine = singleLine
+		singleLine = singleLine,
+		shape = shape
 	)
 }

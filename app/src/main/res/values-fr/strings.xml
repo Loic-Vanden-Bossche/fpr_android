@@ -12,4 +12,5 @@
 	<string name="alreadyRegister">Déjà un compte ?</string>
 	<string name="new_account">Nouveau Compte</string>
 	<string name="login_error">Erreur de mail/mot de passe</string>
+	<string name="search_contact">Rechercher un contact</string>
 </resources>
