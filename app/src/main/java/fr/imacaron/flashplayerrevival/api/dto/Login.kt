@@ -3,8 +3,7 @@ package fr.imacaron.flashplayerrevival.api.dto
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Register(
+data class Login(
 	val email: String,
-	val password: String,
-	val username: String
+	val password: String
 )

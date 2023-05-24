@@ -19,6 +19,7 @@ import androidx.core.os.bundleOf
 import androidx.core.view.WindowCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.navigation.compose.NavHost
@@ -26,8 +27,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import fr.imacaron.flashplayerrevival.MainActivity
 import fr.imacaron.flashplayerrevival.R
+import fr.imacaron.flashplayerrevival.api.dto.Login
 import fr.imacaron.flashplayerrevival.api.dto.LoginResponse
 import fr.imacaron.flashplayerrevival.api.dto.Register
+import fr.imacaron.flashplayerrevival.api.error.ConflictingUser
+import fr.imacaron.flashplayerrevival.api.error.InvalidField
 import fr.imacaron.flashplayerrevival.api.error.LoginError
 import fr.imacaron.flashplayerrevival.api.resources.Auth
 import fr.imacaron.flashplayerrevival.ui.theme.FlashPlayerRevivalTheme
@@ -45,6 +49,7 @@ import io.ktor.http.*
 import io.ktor.resources.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.util.*
 
@@ -63,20 +68,23 @@ class LoginActivity : ComponentActivity() {
 		}
 		expectSuccess = true
 		HttpResponseValidator {
-			handleResponseExceptionWithRequest { exception, request ->
+			handleResponseExceptionWithRequest { exception, _ ->
 				val clientException = exception as? ClientRequestException ?: return@handleResponseExceptionWithRequest
 				val exceptionResponse = clientException.response
-				if(exceptionResponse.status == HttpStatusCode.Unauthorized){
-					throw LoginError()
+				when(exceptionResponse.status){
+					HttpStatusCode.Unauthorized -> throw LoginError()
+					HttpStatusCode.BadRequest -> throw InvalidField()
+					HttpStatusCode.Conflict -> throw ConflictingUser()
 				}
 			}
 		}
 	}
 
-	val dataStore: DataStore<Preferences> by preferencesDataStore(name = "login")
-
-	val mailKey = stringPreferencesKey("email")
-	val passwordKey = stringPreferencesKey("password")
+	companion object {
+		val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "login")
+		val mailKey = stringPreferencesKey("email")
+		val passwordKey = stringPreferencesKey("password")
+	}
 
 	@SuppressLint("SourceLockedOrientationActivity")
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -109,8 +117,13 @@ class LoginActivity : ComponentActivity() {
 		return try {
 			val token: LoginResponse = httpClient.post(Auth.Login()) {
 				contentType(ContentType.Application.Json)
-				setBody(Register(mail, password))
+				setBody(Login(mail, password))
 			}.body()
+			dataStore.edit { settings ->
+				settings[mailKey] = mail
+				settings[passwordKey] = password
+			}
+			finish()
 			startActivity(Intent(this, MainActivity::class.java), bundleOf("token" to token.token))
 			true
 		}catch (_: LoginError){
@@ -118,18 +131,36 @@ class LoginActivity : ComponentActivity() {
 				Toast.makeText(this@LoginActivity, R.string.login_error, Toast.LENGTH_LONG).show()
 			}
 			false
+		}catch (_: InvalidField){
+			withContext(Dispatchers.Main){
+				Toast.makeText(this@LoginActivity, R.string.invalid_field, Toast.LENGTH_LONG).show()
+			}
+			false
 		}
 	}
 
-	suspend fun register(mail: String, password: String): Boolean{
+	suspend fun register(mail: String, password: String, pseudo: String): Boolean{
 		return try {
 			val token: LoginResponse = httpClient.post(Auth.Register()) {
 				contentType(ContentType.Application.Json)
-				setBody(Register(mail, password))
+				setBody(Register(mail, password, pseudo))
 			}.body()
+			dataStore.edit { settings ->
+				settings[mailKey] = mail
+				settings[passwordKey] = password
+			}
+			finish()
 			startActivity(Intent(this, MainActivity::class.java), bundleOf("token" to token.token))
 			true
-		}catch (_: LoginError){
+		}catch (_: InvalidField){
+			withContext(Dispatchers.Main){
+				Toast.makeText(this@LoginActivity, R.string.invalid_field, Toast.LENGTH_LONG).show()
+			}
+			false
+		}catch (_: ConflictingUser){
+			withContext(Dispatchers.Main){
+				Toast.makeText(this@LoginActivity, R.string.conflicting_user, Toast.LENGTH_LONG).show()
+			}
 			false
 		}
 	}

@@ -13,4 +13,7 @@
     <string name="new_account">New Account</string>
     <string name="login_error">Error in mail/password</string>
     <string name="search_contact">Search in contact</string>
+	<string name="pseudo">Pseudo</string>
+	<string name="invalid_field">Invalid Field</string>
+	<string name="conflicting_user">Confligting user</string>
 </resources>

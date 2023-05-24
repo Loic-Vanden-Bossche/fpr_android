@@ -1,7 +1,9 @@
 package fr.imacaron.flashplayerrevival
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -19,13 +21,22 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.os.bundleOf
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.preferencesDataStore
 import fr.imacaron.flashplayerrevival.components.RoundedTextField
+import fr.imacaron.flashplayerrevival.login.LoginActivity
+import fr.imacaron.flashplayerrevival.login.LoginActivity.Companion.dataStore
 import fr.imacaron.flashplayerrevival.ui.theme.FlashPlayerRevivalTheme
 import kotlinx.coroutines.*
+import kotlin.system.exitProcess
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,14 +62,23 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(DelicateCoroutinesApi::class)
 @Composable
 fun NavDrawerSheet(drawerState: DrawerState){
     var selected by remember { mutableStateOf(0) }
     var search by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    val context = (LocalContext.current as MainActivity)
     ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.primary, drawerShape = RectangleShape) {
         RoundedTextField(search, { search = it }, label = { Text(stringResource(R.string.search_contact)) })
+        Button({
+            runBlocking {
+                context.dataStore.edit { it.clear() }
+            }
+            context.finish()
+            context.startActivity(Intent(context, LoginActivity::class.java))
+        }){
+            Text("Se déconnecter")
+        }
         LazyColumn {
             items(5){
                 if(selected == it){

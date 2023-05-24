@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 fun SignInCard(goToLogin: () -> Unit){
 	val context = LocalContext.current
 	var mail by remember { mutableStateOf("") }
+	var pseudo by remember { mutableStateOf("") }
 	var password by remember { mutableStateOf("") }
 	var error by remember { mutableStateOf(false) }
 	var loading by remember { mutableStateOf(false) }
@@ -53,6 +54,15 @@ fun SignInCard(goToLogin: () -> Unit){
 				keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
 				singleLine = true
 			)
+			TextField(
+				pseudo,
+				{ pseudo = it },
+				Modifier.fillMaxWidth(),
+				{ Text(stringResource(R.string.pseudo))},
+				isError = error,
+				keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+				singleLine = true
+			)
 			PasswordField(
 				password,
 				{ password = it },
@@ -62,7 +72,12 @@ fun SignInCard(goToLogin: () -> Unit){
 				keyboardActions = KeyboardActions(onDone = {
 					loading = true
 					GlobalScope.launch(Dispatchers.IO) {
-						error = !(context as LoginActivity).register(mail, password)
+						if((context as LoginActivity).register(mail, password, pseudo)){
+							mail = ""
+							password = ""
+						}else {
+							error = true
+						}
 						loading = false
 					}
 				})
@@ -71,7 +86,12 @@ fun SignInCard(goToLogin: () -> Unit){
 				{
 					loading = true
 					GlobalScope.launch(Dispatchers.IO) {
-						error = !(context as LoginActivity).register(mail, password)
+						if((context as LoginActivity).register(mail, password, pseudo)){
+							mail = ""
+							password = ""
+						}else {
+							error = true
+						}
 						loading = false
 					}
 				},

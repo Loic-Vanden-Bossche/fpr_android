@@ -16,11 +16,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.datastore.dataStore
+import androidx.datastore.preferences.core.edit
 import fr.imacaron.flashplayerrevival.R
 import fr.imacaron.flashplayerrevival.components.BorderCard
 import fr.imacaron.flashplayerrevival.components.PaleText
 import fr.imacaron.flashplayerrevival.components.PasswordField
 import fr.imacaron.flashplayerrevival.components.TextField
+import fr.imacaron.flashplayerrevival.login.LoginActivity.Companion.dataStore
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -35,12 +38,17 @@ fun LoginCard(goToSignIn: () -> Unit) {
 	var error by remember { mutableStateOf(false) }
 	var loading by remember { mutableStateOf(false) }
 	LaunchedEffect(context){
-		context.dataStore.data.map { it[context.mailKey] }.first()?.let { mail = it }
-		context.dataStore.data.map { it[context.passwordKey] }.first()?.let { password = it }
+		context.dataStore.data.map { it[LoginActivity.mailKey] }.first()?.let { mail = it }
+		context.dataStore.data.map { it[LoginActivity.passwordKey] }.first()?.let { password = it }
 		if(mail != "" && password != ""){
 			loading = true
 			withContext(Dispatchers.IO){
-				error = !context.connect(mail, password)
+				if(context.connect(mail, password)){
+					mail = ""
+					password = ""
+				}else {
+					error = true
+				}
 				loading = false
 			}
 		}
@@ -73,7 +81,12 @@ fun LoginCard(goToSignIn: () -> Unit) {
 				keyboardActions = KeyboardActions(onDone = {
 					loading = true
 					GlobalScope.launch(Dispatchers.IO) {
-						error = !context.connect(mail, password)
+						if(context.connect(mail, password)){
+							mail = ""
+							password = ""
+						}else {
+							error = true
+						}
 						loading = false
 					}
 				})
@@ -82,7 +95,12 @@ fun LoginCard(goToSignIn: () -> Unit) {
 				{
 					loading = true
 					GlobalScope.launch(Dispatchers.IO) {
-						error = !context.connect(mail, password)
+						if(context.connect(mail, password)){
+							mail = ""
+							password = ""
+						}else {
+							error = true
+						}
 						loading = false
 					}
 				},
