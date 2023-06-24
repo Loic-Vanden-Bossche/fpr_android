@@ -1,4 +1,4 @@
-package fr.imacaron.flashplayerrevival.api.dto
+package fr.imacaron.flashplayerrevival.api.dto.`in`
 
 import kotlinx.serialization.Serializable
 

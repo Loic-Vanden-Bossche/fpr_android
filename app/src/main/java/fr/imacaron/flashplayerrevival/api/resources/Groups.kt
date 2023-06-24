@@ -1,0 +1,18 @@
+package fr.imacaron.flashplayerrevival.api.resources
+
+import fr.imacaron.flashplayerrevival.utils.serializer.UUIDSerializer
+import io.ktor.resources.*
+import kotlinx.serialization.Serializable
+import java.util.UUID
+
+@Resource("/groups")
+class Groups {
+    @Resource("{id}")
+    class Id(val parent: Groups = Groups(), @Serializable(with = UUIDSerializer::class) val id: UUID){
+        @Resource("messages")
+        class Messages(val parent: Groups.Id) {
+            @Resource("{id}")
+            class Id(val parent: Messages, @Serializable(with = UUIDSerializer::class) val id: UUID)
+        }
+    }
+}

@@ -27,9 +27,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import fr.imacaron.flashplayerrevival.MainActivity
 import fr.imacaron.flashplayerrevival.R
-import fr.imacaron.flashplayerrevival.api.dto.Login
-import fr.imacaron.flashplayerrevival.api.dto.LoginResponse
-import fr.imacaron.flashplayerrevival.api.dto.Register
+import fr.imacaron.flashplayerrevival.api.dto.`in`.Login
+import fr.imacaron.flashplayerrevival.api.dto.out.LoginResponse
+import fr.imacaron.flashplayerrevival.api.dto.`in`.Register
 import fr.imacaron.flashplayerrevival.api.error.ConflictingUser
 import fr.imacaron.flashplayerrevival.api.error.InvalidField
 import fr.imacaron.flashplayerrevival.api.error.LoginError
@@ -49,7 +49,6 @@ import io.ktor.http.*
 import io.ktor.resources.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.util.*
 
@@ -61,8 +60,9 @@ class LoginActivity : ComponentActivity() {
 		}
 		defaultRequest {
 			url {
-				protocol = URLProtocol.HTTPS
-				host = "api.flash-player-revival.fr"
+				protocol = URLProtocol.HTTP
+				host = "192.168.1.63"
+				port = 8080
 				path("api/")
 			}
 		}
@@ -124,7 +124,7 @@ class LoginActivity : ComponentActivity() {
 				settings[passwordKey] = password
 			}
 			finish()
-			startActivity(Intent(this, MainActivity::class.java), bundleOf("token" to token.token))
+			startActivity(Intent(this, MainActivity::class.java).apply { putExtras(bundleOf("token" to token.token)) })
 			true
 		}catch (_: LoginError){
 			withContext(Dispatchers.Main){
@@ -150,7 +150,7 @@ class LoginActivity : ComponentActivity() {
 				settings[passwordKey] = password
 			}
 			finish()
-			startActivity(Intent(this, MainActivity::class.java), bundleOf("token" to token.token))
+			startActivity(Intent(this, MainActivity::class.java).apply { putExtras(bundleOf("token" to token.token)) })
 			true
 		}catch (_: InvalidField){
 			withContext(Dispatchers.Main){
