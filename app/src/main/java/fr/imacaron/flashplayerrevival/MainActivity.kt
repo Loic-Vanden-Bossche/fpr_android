@@ -10,7 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.layout.DelegatingLazyLayoutItemProvider
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -33,7 +33,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import fr.imacaron.flashplayerrevival.api.ApiService
-import fr.imacaron.flashplayerrevival.api.dto.out.GroupResponse
 import fr.imacaron.flashplayerrevival.components.RoundedTextField
 import fr.imacaron.flashplayerrevival.login.LoginActivity
 import fr.imacaron.flashplayerrevival.login.LoginActivity.Companion.dataStore
@@ -46,9 +45,13 @@ class MainActivity : ComponentActivity() {
 
     lateinit var api: ApiService
 
+    @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         api = ApiService(intent.extras!!.getString("token")!!)
+        GlobalScope.launch(Dispatchers.IO){
+            api.initSocket()
+        }
         setContent {
             val drawerState = rememberDrawerState(DrawerValue.Closed)
             val scope = rememberCoroutineScope()
@@ -59,15 +62,17 @@ class MainActivity : ComponentActivity() {
                 ModalNavigationDrawer({
                     NavDrawerSheet(drawerState, mainNav)
                 }, drawerState = drawerState){
-                    Scaffold(topBar = { TopBar(title) { scope.launch { drawerState.open() }}} ) {
+                    Scaffold(topBar = { TopBar(title) { scope.launch { drawerState.open() }}}) {
                         Surface(
                             Modifier.fillMaxSize().padding(it),
                             color = MaterialTheme.colorScheme.background
                         ) {
                             NavHost(mainNav, "home"){
                                 composable("home") {
-                                    Text("NIKKK")
                                     title = stringResource(R.string.app_name)
+                                    Column {
+                                        Text("NIKKK")
+                                    }
                                 }
                                 composable(
                                     "message/{groupId}",
@@ -101,9 +106,12 @@ fun NavDrawerSheet(drawerState: DrawerState, navigator: NavHostController){
     var search by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val context = (LocalContext.current as MainActivity)
-    val groups: MutableList<GroupResponse> = remember { mutableStateListOf() }
+    val groups: MutableList<ApiService.GroupsRoute.Group> = remember { mutableStateListOf() }
     LaunchedEffect(context){
-        groups.addAll(context.api.groups())
+        context.api.groups().map {
+            it.connnect()
+            groups.add(it)
+        }
     }
     ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.primary, drawerShape = RectangleShape) {
         RoundedTextField(search, { search = it }, label = { Text(stringResource(R.string.search_contact)) })
@@ -114,11 +122,11 @@ fun NavDrawerSheet(drawerState: DrawerState, navigator: NavHostController){
         }
         LazyColumn {
             items(groups){
-                if(selected == it.id){
+                if(selected == it.id.toString()){
                     SelectedLine(it.name)
                 }else{
                     Line(it.name){
-                        selected = it.id
+                        selected = it.id.toString()
                         scope.launch {
                             drawerState.close()
                         }
