@@ -16,4 +16,6 @@
 	<string name="pseudo">Pseudo</string>
 	<string name="invalid_field">Invalid Field</string>
 	<string name="conflicting_user">Confligting user</string>
+    <string name="channel_name">Notifications</string>
+	<string name="channel_desc">Channel where notifications are sent</string>
 </resources>

@@ -16,4 +16,6 @@
 	<string name="pseudo">Pseudo</string>
 	<string name="invalid_field">Champs invalide</string>
 	<string name="conflicting_user">Conflit d\'utlisateur</string>
+    <string name="channel_name">Notifications</string>
+	<string name="channel_desc">Channel de notification</string>
 </resources>
