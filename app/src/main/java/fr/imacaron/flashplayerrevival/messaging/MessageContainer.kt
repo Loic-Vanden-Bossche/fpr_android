@@ -33,15 +33,18 @@ fun MessageContainer(groupId: UUID, setTitle: (String) -> Unit){
     var input by remember { mutableStateOf("") }
     var group: ApiService.GroupsRoute.Group? by remember { mutableStateOf(null) }
     LaunchedEffect(newMessage){
-        println(newMessage)
         newMessage?.let {
-            messages.add(0, it)
+            if(it.group == groupId){
+                messages.add(0, it.toMessageResponse())
+            }else {
+                mainActivity.messageNotification(it)
+            }
         }
     }
     LaunchedEffect(mainActivity, groupId){
         if(!init) {
             mainActivity.api.groups(groupId).apply {
-                messages.addAll(messages().map { it })
+                messages.addAll(messages(0, 20).map { it })
                 setTitle(name)
                 init = true
                 group = this
@@ -56,7 +59,6 @@ fun MessageContainer(groupId: UUID, setTitle: (String) -> Unit){
             )
             Button( {
                 GlobalScope.launch(Dispatchers.IO){
-                    println("group")
                     group?.send(input)
                 }
             }){

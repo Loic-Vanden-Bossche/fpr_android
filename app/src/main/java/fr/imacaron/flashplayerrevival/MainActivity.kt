@@ -42,6 +42,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import fr.imacaron.flashplayerrevival.api.ApiService
+import fr.imacaron.flashplayerrevival.api.dto.out.ReceivedMessage
 import fr.imacaron.flashplayerrevival.components.RoundedTextField
 import fr.imacaron.flashplayerrevival.login.LoginActivity
 import fr.imacaron.flashplayerrevival.messaging.MessageContainer
@@ -54,9 +55,6 @@ import java.util.*
 const val CHANNEL_ID = "a4c16ebd-8f12-4f43-8b87-6ad7d47a8f03"
 
 class MainActivity : ComponentActivity() {
-    init {
-        println("Construct class")
-    }
 
     companion object {
         val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "token")
@@ -72,7 +70,6 @@ class MainActivity : ComponentActivity() {
     @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        createNotificationChannel()
         intent.extras?.let {
             it.getString("token")?.let { token ->
                 GlobalScope.launch {
@@ -82,6 +79,7 @@ class MainActivity : ComponentActivity() {
                 }
             } ?: GlobalScope.launch { resume() }
         } ?: GlobalScope.launch { resume() }
+        createNotificationChannel()
         setContent {
             val drawerState = rememberDrawerState(DrawerValue.Closed)
             val scope = rememberCoroutineScope()
@@ -109,9 +107,6 @@ class MainActivity : ComponentActivity() {
                                     title = stringResource(R.string.app_name)
                                     Column {
                                         Text("NIKKK")
-                                        Button({ messageNotification(UUID.fromString("4d6a7452-7048-4ca5-a364-e1e452fe50c3")) }){
-                                            Text("Click me")
-                                        }
                                     }
                                 }
                                 composable(
@@ -131,12 +126,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    suspend fun resume(){
+    private suspend fun resume(){
         token()?.let {
             api = ApiService(it)
             api.initSocket()
         } ?: run {
-            startActivity(Intent(this@MainActivity, LoginActivity::class.java))
+            startActivity(Intent(this, LoginActivity::class.java))
         }
     }
 
@@ -158,19 +153,16 @@ class MainActivity : ComponentActivity() {
         notificationManager.createNotificationChannel(mChannel)
     }
 
-    fun messageNotification(groupId: UUID){
+    fun messageNotification(message: ReceivedMessage){
         val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-            action = Intent.ACTION_MAIN
-            addCategory(Intent.CATEGORY_LAUNCHER)
-            putExtras(bundleOf("group" to groupId.toString()))
+            putExtras(bundleOf("group" to message.group.toString()))
         }
         val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
         val builder = Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.logo)
             .setContentTitle("Nouveau message")
-            .setContentText("Texte du message")
-            .setStyle(Notification.BigTextStyle().bigText("Texte du message mais vraiment long"))
+            .setContentText(message.message.drop(15))
+            .setStyle(Notification.BigTextStyle().bigText(message.message))
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager

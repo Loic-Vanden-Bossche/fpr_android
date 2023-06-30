@@ -3,6 +3,7 @@ package fr.imacaron.flashplayerrevival.api
 import fr.imacaron.flashplayerrevival.api.dto.`in`.SendMessage
 import fr.imacaron.flashplayerrevival.api.dto.out.GroupResponse
 import fr.imacaron.flashplayerrevival.api.dto.out.MessageResponse
+import fr.imacaron.flashplayerrevival.api.dto.out.ReceivedMessage
 import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.api.resources.Groups
 import fr.imacaron.flashplayerrevival.api.type.STOMPMethod
@@ -59,9 +60,9 @@ class ApiService(private val token: String) {
         }
     }
 
-    private val messageChannel: Channel<MessageResponse> = Channel()
+    private val messageChannel: Channel<ReceivedMessage> = Channel()
 
-    val messageFlow: Flow<MessageResponse> = flow {
+    val messageFlow: Flow<ReceivedMessage> = flow {
         while(true){
             val data = messageChannel.receive()
             emit(data)
@@ -74,13 +75,11 @@ class ApiService(private val token: String) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun initSocket(){
-        println("INIT SOCKET")
         withContext(Dispatchers.IO){
             httpClient.webSocket(method = HttpMethod.Get, host = "192.168.1.63", port = 8080, path = "/socket"){
                 send("CONNECT\nAuthorization:$token\naccept-version:1.1,1.0\nheart-beat:10000,10000\n\n".encodeToByteArray())
                 send(byteArrayOf(0))
-                val frame = incoming.receive() as Frame.Text
-                println(frame.readText())
+                incoming.receive() as Frame.Text
                 launch {
                     var totalSub = 0
                     while(true){
@@ -92,7 +91,6 @@ class ApiService(private val token: String) {
                                 totalSub++
                             }
                             STOMPMethod.SEND -> {
-                                println(writeMessage.message.length)
                                 send("SEND\ndestination:/app/${writeMessage.groupId}/messages\ncontent-length:${writeMessage.message.length+1}\n\n${writeMessage.message}\n")
                                 send(EOF)
                             }
@@ -108,7 +106,6 @@ class ApiService(private val token: String) {
                     text.first().let {
                         when(it) {
                             "MESSAGE" -> {
-                                println("message")
                                 var i = 1
                                 val headers = mutableMapOf<String, String>()
                                 while(text[i].isNotBlank()){
@@ -119,7 +116,14 @@ class ApiService(private val token: String) {
                                     val data = text.subList(i, text.size).joinToString("").let { temp ->
                                         Json.decodeFromString<MessageResponse>(temp.substring(0, temp.length - 1))
                                     }
-                                    messageChannel.send(data)
+                                    val msg = ReceivedMessage(
+                                        data.id,
+                                        data.user,
+                                        data.message,
+                                        data.createdAt,
+                                        UUID.fromString(headers["destination"]!!.split("/")[2])
+                                    )
+                                    messageChannel.send(msg)
                                 }catch (e: Exception){
                                     e.printStackTrace()
                                 }
@@ -149,7 +153,7 @@ class ApiService(private val token: String) {
             val name: String get() = original.name
             val type: GroupType get() = original.type
             val members: List<UserResponse> get() = original.members
-            suspend fun messages(): List<MessageResponse> = httpClient.get(Groups.Id.Messages(Groups.Id(id = UUID.fromString(original.id)))).body()
+            suspend fun messages(page: Int, size: Int): List<MessageResponse> = httpClient.get(Groups.Id.Messages(Groups.Id(id = UUID.fromString(original.id)), page, size)).body()
 
             suspend fun connnect(){
                 writeMessageChannel.send(WriteMessage(groupId = id, type = STOMPMethod.SUBSCRIBE))

@@ -10,7 +10,7 @@ class Groups {
     @Resource("{id}")
     class Id(val parent: Groups = Groups(), @Serializable(with = UUIDSerializer::class) val id: UUID){
         @Resource("messages")
-        class Messages(val parent: Groups.Id) {
+        class Messages(val parent: Groups.Id, val page: Int, val size: Int) {
             @Resource("{id}")
             class Id(val parent: Messages, @Serializable(with = UUIDSerializer::class) val id: UUID)
         }
