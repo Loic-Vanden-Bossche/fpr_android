@@ -5,6 +5,7 @@ import fr.imacaron.flashplayerrevival.api.dto.out.GroupResponse
 import fr.imacaron.flashplayerrevival.api.dto.out.MessageResponse
 import fr.imacaron.flashplayerrevival.api.dto.out.ReceivedMessage
 import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
+import fr.imacaron.flashplayerrevival.api.resources.Friends
 import fr.imacaron.flashplayerrevival.api.resources.Groups
 import fr.imacaron.flashplayerrevival.api.type.STOMPMethod
 import fr.imacaron.flashplayerrevival.api.type.WriteMessage
@@ -141,6 +142,8 @@ class ApiService(private val token: String) {
 
     val groups: GroupsRoute = GroupsRoute()
 
+    val friends: FriendsRoute = FriendsRoute()
+
     inner class GroupsRoute{
         suspend operator fun invoke(): List<Group> = httpClient.get(Groups()).body<List<GroupResponse>>().map { Group(it) }
 
@@ -163,6 +166,25 @@ class ApiService(private val token: String) {
                 val data = Json.encodeToString<SendMessage>(SendMessage(text))
                 writeMessageChannel.send(WriteMessage(data, id, STOMPMethod.SEND))
             }
+        }
+    }
+    
+    inner class FriendsRoute{
+
+        suspend operator fun invoke(): List<FriendsRoute.Friend> = httpClient.get(Friends()).body<List<UserResponse>>().map { Friend(it) }
+
+        suspend operator fun invoke(id: UUID): FriendsRoute.Friend = Friend(httpClient.get(Friends.Id(id = id)).body())
+
+        inner class Friend(
+            private val original: UserResponse
+        ){
+            val id: UUID get() = original.id
+            val email: String get() = original.email
+            val role: String get() = original.role
+            val nickname: String get() = original.nickname
+            val coins: Int get() = original.coins
+            val updatedAt: String get() = original.updatedAt
+            val createdAt: String get() = original.createdAt
         }
     }
 }

@@ -22,6 +22,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -49,6 +50,8 @@ import io.ktor.http.*
 import io.ktor.resources.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.*
 
@@ -89,6 +92,9 @@ class LoginActivity : ComponentActivity() {
 	@SuppressLint("SourceLockedOrientationActivity")
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
+		lifecycleScope.launch {
+			dataStore.edit { it.clear() }
+		}
 		requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 		WindowCompat.setDecorFitsSystemWindows(window, false)
 		setContent {

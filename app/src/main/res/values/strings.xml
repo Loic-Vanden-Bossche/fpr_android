@@ -18,4 +18,5 @@
 	<string name="conflicting_user">Confligting user</string>
     <string name="channel_name">Notifications</string>
     <string name="channel_desc">Channel where notifications are sent</string>
+    <string name="new_message">New Message</string>
 </resources>

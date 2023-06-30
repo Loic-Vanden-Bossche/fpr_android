@@ -12,10 +12,11 @@
 	<string name="alreadyRegister">Déjà un compte ?</string>
 	<string name="new_account">Nouveau Compte</string>
 	<string name="login_error">Erreur de mail/mot de passe</string>
-	<string name="search_contact">Rechercher un contact</string>
+	<string name="search_contact">Rechercher un contact/groupe</string>
 	<string name="pseudo">Pseudo</string>
 	<string name="invalid_field">Champs invalide</string>
 	<string name="conflicting_user">Conflit d\'utlisateur</string>
     <string name="channel_name">Notifications</string>
 	<string name="channel_desc">Channel de notification</string>
+    <string name="new_message">Nouveau message</string>
 </resources>
