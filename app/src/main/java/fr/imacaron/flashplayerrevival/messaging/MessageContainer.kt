@@ -26,7 +26,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import fr.imacaron.flashplayerrevival.MainActivity
 import fr.imacaron.flashplayerrevival.R
 import fr.imacaron.flashplayerrevival.TopBar
@@ -36,10 +35,7 @@ import fr.imacaron.flashplayerrevival.api.dto.out.UserMessageResponse
 import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.components.TextField
 import fr.imacaron.flashplayerrevival.utils.frenchDateFormater
-import fr.imacaron.flashplayerrevival.utils.keyboardAsState
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.*
 

@@ -11,7 +11,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -23,7 +22,6 @@ import fr.imacaron.flashplayerrevival.TopBar
 import fr.imacaron.flashplayerrevival.api.ApiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
 
 @Composable
