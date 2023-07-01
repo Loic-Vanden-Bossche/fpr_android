@@ -35,6 +35,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -68,7 +69,7 @@ class MainActivity : ComponentActivity() {
 
     suspend fun token(token: String) = dataStore.edit { it[tokenKey] = token }
 
-    @OptIn(DelicateCoroutinesApi::class, ExperimentalComposeUiApi::class)
+    @OptIn(DelicateCoroutinesApi::class, ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         intent.extras?.let {
@@ -89,10 +90,10 @@ class MainActivity : ComponentActivity() {
                 }
                 true
             }
-            val scope = rememberCoroutineScope()
             val mainNav = rememberNavController()
             var title by remember { mutableStateOf("") }
             var self: UserResponse? by remember { mutableStateOf(null) }
+            var reload by remember { mutableStateOf(false) }
             LaunchedEffect(Unit){
                 intent.extras?.let {
                     it.getString("group")?.let { data ->
@@ -104,34 +105,24 @@ class MainActivity : ComponentActivity() {
             title = stringResource(R.string.app_name)
             FlashPlayerRevivalTheme {
                 ModalNavigationDrawer({
-                    NavDrawerSheet(drawerState, mainNav, self)
+                    NavDrawerSheet(drawerState, mainNav, self, reload)
                 }, drawerState = drawerState){
-                    Scaffold(topBar = { TopBar(title) { scope.launch { drawerState.open() }}}) {
-                        Surface(
-                            Modifier.fillMaxSize().padding(it),
-                            color = MaterialTheme.colorScheme.background
-                        ) {
-                            NavHost(mainNav, "home"){
-                                composable("home") {
-                                    title = stringResource(R.string.app_name)
-                                    val newMessage by api.messageFlow.collectAsStateWithLifecycle(null)
-                                    LaunchedEffect(newMessage){
-                                        newMessage?.let { msg ->
-                                            messageNotification(msg)
-                                        }
-                                    }
-                                    HomeScreen()
-                                }
-                                composable(
-                                    "message/{groupId}",
-                                    listOf(navArgument("groupId") { type = NavType.StringType })
-                                ) { backStack ->
-                                    val id = backStack.arguments?.getString("groupId")
-                                    MessageContainer(UUID.fromString(id)) {newTitle ->
-                                        title = newTitle
-                                    }
+                    NavHost(mainNav, "home"){
+                        composable("home") {
+                            val newMessage by api.messageFlow.collectAsStateWithLifecycle(null)
+                            LaunchedEffect(newMessage){
+                                newMessage?.let { msg ->
+                                    messageNotification(msg)
                                 }
                             }
+                            HomeScreen({ reload = !reload }, drawerState)
+                        }
+                        composable(
+                            "message/{groupId}",
+                            listOf(navArgument("groupId") { type = NavType.StringType })
+                        ) { backStack ->
+                            val id = backStack.arguments?.getString("groupId")
+                            MessageContainer(UUID.fromString(id), self, drawerState)
                         }
                     }
                 }
@@ -198,16 +189,6 @@ fun SelectedLine(pseudo: String){
             Image(painterResource(R.drawable.logo), null, Modifier.size(56.dp))
         }
         Text(pseudo, color = MaterialTheme.colorScheme.onSurface)
-    }
-}
-
-@Composable
-fun Line(pseudo: String, onClick: () -> Unit){
-    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).clickable { onClick() }, verticalAlignment = Alignment.CenterVertically) {
-        Surface(Modifier.padding(all = 20.dp), shape = CircleShape, color = MaterialTheme.colorScheme.background) {
-            Image(painterResource(R.drawable.logo), null, Modifier.size(56.dp))
-        }
-        Text(pseudo, color = MaterialTheme.colorScheme.onBackground)
     }
 }
 

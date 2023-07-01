@@ -171,6 +171,7 @@ class ApiService(private val token: String) {
             val name: String get() = original.name
             val type: GroupType get() = original.type
             val members: List<UserResponse> get() = original.members
+
             suspend fun messages(page: Int, size: Int): List<MessageResponse> = httpClient.get(Groups.Id.Messages(Groups.Id(id = UUID.fromString(original.id)), page, size)).body()
 
             suspend fun connect(){
@@ -181,6 +182,11 @@ class ApiService(private val token: String) {
                 val data = Json.encodeToString<SendMessage>(SendMessage(text))
                 writeMessageChannel.send(WriteMessage(data, id, STOMPMethod.SEND))
             }
+
+            suspend fun deleteMessage(id: UUID){
+//                httpClient.delete(Groups.Id.Messages.Id(Groups.Id.Messages(Groups.Id(id = this.id)), id))
+                httpClient.delete("/api/groups/${this.id}/messages/$id")
+            }
         }
     }
     
@@ -189,6 +195,32 @@ class ApiService(private val token: String) {
         suspend operator fun invoke(): List<FriendsRoute.Friend> = httpClient.get(Friends()).body<List<UserResponse>>().map { Friend(it) }
 
         suspend operator fun invoke(id: UUID): FriendsRoute.Friend = Friend(httpClient.get(Friends.Id(id = id)).body())
+
+        val pending: PendingRoute = PendingRoute()
+
+        inner class PendingRoute {
+            suspend operator fun invoke(): List<FriendsRoute.PendingRoute.Pending> = httpClient.get(Friends.Pending()).body<List<UserResponse>>().map { Pending(it) }
+
+            inner class Pending(
+                val original: UserResponse
+            ){
+                val id: UUID get() = original.id
+                val email: String get() = original.email
+                val role: String get() = original.role
+                val nickname: String get() = original.nickname
+                val coins: Int get() = original.coins
+                val updatedAt: String get() = original.updatedAt
+                val createdAt: String get() = original.createdAt
+
+                suspend fun approve(){
+                    httpClient.patch(Friends.Approve(id = id))
+                }
+
+                suspend fun deny(){
+                    httpClient.patch(Friends.Deny(id = id))
+                }
+            }
+        }
 
         inner class Friend(
             val original: UserResponse

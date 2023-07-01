@@ -8,7 +8,13 @@ import java.util.UUID
 @Resource("/friends")
 class Friends{
     @Resource("pending")
-    class Pendind(val parent: Friends = Friends())
+    class Pending(val parent: Friends = Friends())
+
+    @Resource("{id}/approve")
+    class Approve(val parent: Friends = Friends(), @Serializable(with = UUIDSerializer::class) val id: UUID)
+
+    @Resource("{id}/deny")
+    class Deny(val parent: Friends = Friends(), @Serializable(with = UUIDSerializer::class) val id: UUID)
 
     @Resource("{id}")
     class Id(val parent: Friends = Friends(), @Serializable(with = UUIDSerializer::class)val id: UUID)
