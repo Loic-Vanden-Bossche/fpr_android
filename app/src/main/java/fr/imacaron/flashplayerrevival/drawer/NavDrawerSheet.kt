@@ -7,7 +7,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.PlusOne
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -20,11 +19,12 @@ import fr.imacaron.flashplayerrevival.MainActivity
 import fr.imacaron.flashplayerrevival.R
 import fr.imacaron.flashplayerrevival.SelectedLine
 import fr.imacaron.flashplayerrevival.api.ApiService
+import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.components.RoundedTextField
 import kotlinx.coroutines.launch
 
 @Composable
-fun NavDrawerSheet(drawerState: DrawerState, navigator: NavHostController){
+fun NavDrawerSheet(drawerState: DrawerState, navigator: NavHostController, self: UserResponse?){
     var selected by remember { mutableStateOf("") }
     var search by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
@@ -33,7 +33,7 @@ fun NavDrawerSheet(drawerState: DrawerState, navigator: NavHostController){
     var displayModal: Boolean by remember { mutableStateOf(false) }
     LaunchedEffect(context){
         context.api.groups().map {
-            it.connnect()
+            it.connect()
             groups.add(it)
         }
     }
@@ -55,7 +55,7 @@ fun NavDrawerSheet(drawerState: DrawerState, navigator: NavHostController){
             }
         }
         if(displayModal){
-            CreateGroupModal(context.api,  { displayModal = false })
+            CreateGroupModal(context.api,  { displayModal = false }, { groups.add(0, it) }, self)
         }
         Row {
             IconButton( { displayModal = true } ){

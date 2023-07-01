@@ -40,6 +40,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import fr.imacaron.flashplayerrevival.api.ApiService
 import fr.imacaron.flashplayerrevival.api.dto.out.ReceivedMessage
+import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.drawer.NavDrawerSheet
 import fr.imacaron.flashplayerrevival.home.HomeScreen
 import fr.imacaron.flashplayerrevival.login.LoginActivity
@@ -83,17 +84,19 @@ class MainActivity : ComponentActivity() {
             val scope = rememberCoroutineScope()
             val mainNav = rememberNavController()
             var title by remember { mutableStateOf("") }
+            var self: UserResponse? by remember { mutableStateOf(null) }
             LaunchedEffect(Unit){
                 intent.extras?.let {
                     it.getString("group")?.let { data ->
                         mainNav.navigate("message/$data")
                     }
                 }
+                self = api.self()
             }
             title = stringResource(R.string.app_name)
             FlashPlayerRevivalTheme {
                 ModalNavigationDrawer({
-                    NavDrawerSheet(drawerState, mainNav)
+                    NavDrawerSheet(drawerState, mainNav, self)
                 }, drawerState = drawerState){
                     Scaffold(topBar = { TopBar(title) { scope.launch { drawerState.open() }}}) {
                         Surface(

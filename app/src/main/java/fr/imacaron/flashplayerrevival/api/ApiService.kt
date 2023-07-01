@@ -1,5 +1,6 @@
 package fr.imacaron.flashplayerrevival.api
 
+import fr.imacaron.flashplayerrevival.api.dto.`in`.CreateGroup
 import fr.imacaron.flashplayerrevival.api.dto.`in`.SendMessage
 import fr.imacaron.flashplayerrevival.api.dto.out.GroupResponse
 import fr.imacaron.flashplayerrevival.api.dto.out.MessageResponse
@@ -7,6 +8,7 @@ import fr.imacaron.flashplayerrevival.api.dto.out.ReceivedMessage
 import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.api.resources.Friends
 import fr.imacaron.flashplayerrevival.api.resources.Groups
+import fr.imacaron.flashplayerrevival.api.resources.Profile
 import fr.imacaron.flashplayerrevival.api.type.STOMPMethod
 import fr.imacaron.flashplayerrevival.api.type.WriteMessage
 import fr.imacaron.flashplayerrevival.domain.type.GroupType
@@ -140,14 +142,27 @@ class ApiService(private val token: String) {
         httpClient.close()
     }
 
+    val self: SelfRoute = SelfRoute()
+
     val groups: GroupsRoute = GroupsRoute()
 
     val friends: FriendsRoute = FriendsRoute()
+
+    inner class SelfRoute {
+        suspend operator fun invoke(): UserResponse = httpClient.get(Profile()).body()
+    }
 
     inner class GroupsRoute{
         suspend operator fun invoke(): List<Group> = httpClient.get(Groups()).body<List<GroupResponse>>().map { Group(it) }
 
         suspend operator fun invoke(id: UUID): Group = Group(httpClient.get(Groups.Id(id = id)).body())
+
+        suspend fun create(data: List<UserResponse>): Group =
+            httpClient.post(Groups()) {
+                val name = data.joinToString(", ") { it.nickname }
+                contentType(ContentType.Application.Json)
+                setBody(CreateGroup(name, data.map { it.id }))
+            }.let { Group(it.body()).apply { connect() } }
 
         inner class Group(
             private val original: GroupResponse
@@ -158,7 +173,7 @@ class ApiService(private val token: String) {
             val members: List<UserResponse> get() = original.members
             suspend fun messages(page: Int, size: Int): List<MessageResponse> = httpClient.get(Groups.Id.Messages(Groups.Id(id = UUID.fromString(original.id)), page, size)).body()
 
-            suspend fun connnect(){
+            suspend fun connect(){
                 writeMessageChannel.send(WriteMessage(groupId = id, type = STOMPMethod.SUBSCRIBE))
             }
 
@@ -176,7 +191,7 @@ class ApiService(private val token: String) {
         suspend operator fun invoke(id: UUID): FriendsRoute.Friend = Friend(httpClient.get(Friends.Id(id = id)).body())
 
         inner class Friend(
-            private val original: UserResponse
+            val original: UserResponse
         ){
             val id: UUID get() = original.id
             val email: String get() = original.email
