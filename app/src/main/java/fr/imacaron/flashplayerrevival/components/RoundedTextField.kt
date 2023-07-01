@@ -20,7 +20,8 @@ fun RoundedTextField(
 	visualTransformation: VisualTransformation = VisualTransformation.None,
 	keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
 	keyboardActions: KeyboardActions = KeyboardActions.Default,
-	singleLine: Boolean = false
+	singleLine: Boolean = false,
+	maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE
 ){
 	TextField(
 		value,
@@ -33,6 +34,7 @@ fun RoundedTextField(
 		keyboardOptions,
 		keyboardActions,
 		singleLine,
+		maxLines,
 		RoundedCornerShape(8.dp)
 	)
 }

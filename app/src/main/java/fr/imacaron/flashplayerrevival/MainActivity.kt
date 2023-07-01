@@ -19,10 +19,12 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -66,7 +68,7 @@ class MainActivity : ComponentActivity() {
 
     suspend fun token(token: String) = dataStore.edit { it[tokenKey] = token }
 
-    @OptIn(DelicateCoroutinesApi::class)
+    @OptIn(DelicateCoroutinesApi::class, ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         intent.extras?.let {
@@ -80,7 +82,13 @@ class MainActivity : ComponentActivity() {
         } ?: GlobalScope.launch { resume() }
         createNotificationChannel()
         setContent {
-            val drawerState = rememberDrawerState(DrawerValue.Closed)
+            val keyboardController = LocalSoftwareKeyboardController.current
+            val drawerState = rememberDrawerState(DrawerValue.Closed) {
+                if (it == DrawerValue.Open) {
+                    keyboardController?.hide()
+                }
+                true
+            }
             val scope = rememberCoroutineScope()
             val mainNav = rememberNavController()
             var title by remember { mutableStateOf("") }

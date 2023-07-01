@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GroupAdd
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.*
@@ -49,6 +50,7 @@ fun NavDrawerSheet(drawerState: DrawerState, navigator: NavHostController, self:
                         scope.launch {
                             drawerState.close()
                         }
+                        navigator.navigateUp()
                         navigator.navigate("message/${it.id}")
                     }
                 }
@@ -58,6 +60,9 @@ fun NavDrawerSheet(drawerState: DrawerState, navigator: NavHostController, self:
             CreateGroupModal(context.api,  { displayModal = false }, { groups.add(0, it) }, self)
         }
         Row {
+            IconButton( { selected = ""; navigator.popBackStack("home", false); scope.launch { drawerState.close() } } ){
+                Icon(Icons.Default.Home, "Home")
+            }
             IconButton( { displayModal = true } ){
                 Icon(Icons.Default.GroupAdd, "Create group")
             }
