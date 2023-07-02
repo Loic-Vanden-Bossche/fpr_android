@@ -170,7 +170,7 @@ class ApiService(private val token: String) {
             val id: UUID get() = UUID.fromString(original.id)
             val name: String get() = original.name
             val type: GroupType get() = original.type
-            val members: List<UserResponse> get() = original.members
+            val members: List<UserResponse> get() = original.members.map { it.user }
 
             suspend fun messages(page: Int, size: Int): List<MessageResponse> = httpClient.get(Groups.Id.Messages(Groups.Id(id = UUID.fromString(original.id)), page, size)).body()
 

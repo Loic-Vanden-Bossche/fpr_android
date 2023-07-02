@@ -8,5 +8,5 @@ data class GroupResponse(
     val id: String,
     val name: String,
     val type: GroupType,
-    val members: List<UserResponse>
+    val members: List<UserGroupResponse>
 )
