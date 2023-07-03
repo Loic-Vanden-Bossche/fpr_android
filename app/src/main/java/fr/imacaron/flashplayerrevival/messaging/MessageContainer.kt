@@ -33,7 +33,7 @@ import fr.imacaron.flashplayerrevival.api.ApiService
 import fr.imacaron.flashplayerrevival.api.dto.out.MessageResponse
 import fr.imacaron.flashplayerrevival.api.dto.out.UserMessageResponse
 import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
-import fr.imacaron.flashplayerrevival.components.TextField
+import fr.imacaron.flashplayerrevival.components.RoundedTextField
 import fr.imacaron.flashplayerrevival.utils.frenchDateFormater
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -90,8 +90,8 @@ fun MessageContainer(groupId: UUID, self: UserResponse?, drawerState: DrawerStat
                         }
                     }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextField(
+                Row(Modifier.padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    RoundedTextField(
                         input,
                         { input = it },
                         Modifier.weight(1f),
@@ -99,7 +99,7 @@ fun MessageContainer(groupId: UUID, self: UserResponse?, drawerState: DrawerStat
                         keyboardOptions = KeyboardOptions(KeyboardCapitalization.Sentences, true, KeyboardType.Text, ImeAction.Default),
                         maxLines = 3
                     )
-                    Button( {
+                    ElevatedButton( {
                         scope.launch(Dispatchers.IO){
                             group?.send(input)
                             input = ""

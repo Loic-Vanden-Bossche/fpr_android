@@ -1,14 +1,13 @@
 package fr.imacaron.flashplayerrevival.api
 
+import fr.imacaron.flashplayerrevival.api.dto.`in`.AddFriend
 import fr.imacaron.flashplayerrevival.api.dto.`in`.CreateGroup
 import fr.imacaron.flashplayerrevival.api.dto.`in`.SendMessage
-import fr.imacaron.flashplayerrevival.api.dto.out.GroupResponse
-import fr.imacaron.flashplayerrevival.api.dto.out.MessageResponse
-import fr.imacaron.flashplayerrevival.api.dto.out.ReceivedMessage
-import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
+import fr.imacaron.flashplayerrevival.api.dto.out.*
 import fr.imacaron.flashplayerrevival.api.resources.Friends
 import fr.imacaron.flashplayerrevival.api.resources.Groups
 import fr.imacaron.flashplayerrevival.api.resources.Profile
+import fr.imacaron.flashplayerrevival.api.resources.Users
 import fr.imacaron.flashplayerrevival.api.type.STOMPMethod
 import fr.imacaron.flashplayerrevival.api.type.WriteMessage
 import fr.imacaron.flashplayerrevival.domain.type.GroupType
@@ -17,20 +16,23 @@ import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.resources.*
-import io.ktor.client.plugins.resources.get
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.util.UUID
+import java.util.*
+import kotlin.collections.set
 
 class ApiService(private val token: String) {
 
@@ -232,6 +234,30 @@ class ApiService(private val token: String) {
             val coins: Int get() = original.coins
             val updatedAt: String get() = original.updatedAt
             val createdAt: String get() = original.createdAt
+
+            suspend fun delete(){
+                httpClient.delete(Friends.Id(id = this.id))
+            }
+        }
+    }
+
+    val users: UsersRoute = UsersRoute()
+
+    inner class UsersRoute {
+        suspend fun search(search: String): List<Search> = httpClient.get(Users.Search(search = search)).body<List<SearchResponse>>().map { Search(it) }
+
+        inner class Search(val original: SearchResponse) {
+            val id: UUID get() = original.id
+            val email: String get() = original.email
+            val nickname: String get() = original.nickname
+            val status: String? get() = original.status
+
+            suspend fun addFriend(){
+                httpClient.post(Friends()){
+                    contentType(ContentType.Application.Json)
+                    setBody(AddFriend(id))
+                }
+            }
         }
     }
 }

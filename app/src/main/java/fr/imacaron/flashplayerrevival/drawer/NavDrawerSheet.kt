@@ -3,9 +3,11 @@ package fr.imacaron.flashplayerrevival.drawer
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GroupAdd
@@ -28,6 +30,10 @@ import fr.imacaron.flashplayerrevival.SelectedLine
 import fr.imacaron.flashplayerrevival.api.ApiService
 import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.components.RoundedTextField
+import fr.imacaron.flashplayerrevival.components.pullrefresh.PullRefreshIndicator
+import fr.imacaron.flashplayerrevival.components.pullrefresh.pullRefresh
+import fr.imacaron.flashplayerrevival.components.pullrefresh.rememberPullRefreshState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Composable
@@ -37,34 +43,60 @@ fun NavDrawerSheet(drawerState: DrawerState, navigator: NavHostController, self:
     val scope = rememberCoroutineScope()
     val context = (LocalContext.current as MainActivity)
     val groups: MutableList<ApiService.GroupsRoute.Group> = remember { mutableStateListOf() }
+    val friends: MutableList<ApiService.FriendsRoute.Friend> = remember { mutableStateListOf() }
     var displayModal: Boolean by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    var refreshing by remember { mutableStateOf(false) }
+    val pullState = rememberPullRefreshState(refreshing, {
+        scope.launch(Dispatchers.IO) {
+            refreshing = true
+            groups.clear()
+            context.api.groups().map {
+                it.connect()
+                groups.add(it)
+            }
+            refreshing = false
+        }
+    })
     LaunchedEffect(context, reload){
         groups.clear()
         context.api.groups().map {
             it.connect()
             groups.add(it)
         }
+        friends.clear()
+        friends.addAll(context.api.friends())
+        println(friends.size)
     }
     ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.primary, drawerShape = RectangleShape) {
-        RoundedTextField(search, { search = it }, label = { Text(stringResource(R.string.search_contact)) })
-        LazyColumn(Modifier.weight(1f)) {
-            items(groups){
-                if(selected == it.id.toString()){
-                    SelectedLine(it.name)
-                }else{
-                    Line(it.name){
-                        selected = it.id.toString()
-                        scope.launch {
-                            drawerState.close()
+        RoundedTextField(search, { search = it }, Modifier.padding(8.dp).fillMaxWidth(), label = { Text(stringResource(R.string.search_contact)) })
+        Box(Modifier.weight(1f).pullRefresh(pullState)){
+            LazyColumn(Modifier.fillMaxSize(), listState, flingBehavior = ScrollableDefaults.flingBehavior()) {
+                if(!refreshing){
+                    items(groups.filter { if(search.isBlank()) true else search in it.name.lowercase() }){
+                        if(selected == it.id.toString()){
+                            SelectedLine(it.name)
+                        }else{
+                            Line(it.name){
+                                selected = it.id.toString()
+                                scope.launch {
+                                    drawerState.close()
+                                }
+                                navigator.navigateUp()
+                                navigator.navigate("message/${it.id}")
+                            }
                         }
-                        navigator.navigateUp()
-                        navigator.navigate("message/${it.id}")
                     }
                 }
             }
+            PullRefreshIndicator(
+                refreshing,
+                pullState,
+                Modifier.align(alignment = Alignment.TopCenter)
+            )
         }
         if(displayModal){
-            CreateGroupModal(context.api,  { displayModal = false }, { groups.add(0, it) }, self)
+            CreateGroupModal(context.api,  { displayModal = false }, { groups.add(0, it) }, self, friends)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
             IconButton( { selected = ""; navigator.popBackStack("home", false); scope.launch { drawerState.close() } } ){
@@ -73,7 +105,7 @@ fun NavDrawerSheet(drawerState: DrawerState, navigator: NavHostController, self:
             IconButton( { displayModal = true } ){
                 Icon(Icons.Default.GroupAdd, "Create group")
             }
-            IconButton({}){
+            IconButton({ navigator.navigate("search"); scope.launch { drawerState.close() } }){
                 Icon(Icons.Default.PersonAdd, null)
             }
             IconButton({ context.disconnect() }){

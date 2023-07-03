@@ -17,16 +17,15 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateGroupModal(api: ApiService, dismiss: () -> Unit, addGroup: (ApiService.GroupsRoute.Group) -> Unit, self: UserResponse?){
-    val friends: MutableList<ApiService.FriendsRoute.Friend> = remember { mutableStateListOf() }
+fun CreateGroupModal(api: ApiService, dismiss: () -> Unit, addGroup: (ApiService.GroupsRoute.Group) -> Unit, self: UserResponse?, friends: List<ApiService.FriendsRoute.Friend>){
     val check: MutableList<Boolean> = remember { mutableStateListOf() }
     val scope = rememberCoroutineScope()
-    LaunchedEffect(api){
-        val data = api.friends()
-        friends.addAll(data)
-        check.addAll(List(data.size) { false })
+    check.addAll(List(friends.size) { false })
+    LaunchedEffect(friends){
+        check.clear()
+        check.addAll(List(friends.size) { false })
     }
-    AlertDialog(dismiss, modifier = Modifier.height((180 + friends.size * 50).dp)) {
+    AlertDialog(dismiss) {
         Surface(shape = MaterialTheme.shapes.extraLarge) {
             Column(Modifier.padding(24.dp)) {
                 Text(stringResource(R.string.create_group), Modifier.padding(bottom = 16.dp), style = MaterialTheme.typography.headlineSmall)

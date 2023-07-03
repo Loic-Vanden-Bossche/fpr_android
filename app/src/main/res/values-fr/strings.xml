@@ -24,4 +24,5 @@
 	<string name="cancel">Annuler</string>
 	<string name="create">Créer</string>
 	<string name="send">Envoyer</string>
+    <string name="search_user">Rechercher un utilisateur</string>
 </resources>

@@ -11,10 +11,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -46,10 +49,14 @@ import fr.imacaron.flashplayerrevival.drawer.NavDrawerSheet
 import fr.imacaron.flashplayerrevival.home.HomeScreen
 import fr.imacaron.flashplayerrevival.login.LoginActivity
 import fr.imacaron.flashplayerrevival.messaging.MessageContainer
+import fr.imacaron.flashplayerrevival.search.SearchScreen
 import fr.imacaron.flashplayerrevival.ui.theme.FlashPlayerRevivalTheme
-import kotlinx.coroutines.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.util.*
 
 const val CHANNEL_ID = "a4c16ebd-8f12-4f43-8b87-6ad7d47a8f03"
@@ -83,9 +90,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val keyboardController = LocalSoftwareKeyboardController.current
             val drawerState = rememberDrawerState(DrawerValue.Closed) {
-                if (it == DrawerValue.Open) {
-                    keyboardController?.hide()
-                }
+                keyboardController?.hide()
                 true
             }
             val mainNav = rememberNavController()
@@ -121,6 +126,9 @@ class MainActivity : ComponentActivity() {
                         ) { backStack ->
                             val id = backStack.arguments?.getString("groupId")
                             MessageContainer(UUID.fromString(id), self, drawerState)
+                        }
+                        composable("search"){
+                            SearchScreen(api, drawerState)
                         }
                     }
                 }

@@ -20,6 +20,9 @@ import androidx.compose.ui.unit.dp
 import fr.imacaron.flashplayerrevival.MainActivity
 import fr.imacaron.flashplayerrevival.TopBar
 import fr.imacaron.flashplayerrevival.api.ApiService
+import fr.imacaron.flashplayerrevival.components.pullrefresh.PullRefreshIndicator
+import fr.imacaron.flashplayerrevival.components.pullrefresh.pullRefresh
+import fr.imacaron.flashplayerrevival.components.pullrefresh.rememberPullRefreshState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -32,6 +35,17 @@ fun HomeScreen(doReload: () -> Unit, drawerState: DrawerState){
     var tab by remember { mutableStateOf(0) }
     var reload by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    var refreshing by remember { mutableStateOf(false) }
+    val pullState = rememberPullRefreshState(refreshing, {
+        scope.launch(Dispatchers.IO){
+            refreshing = true
+            friends.clear()
+            pending.clear()
+            friends.addAll(mainActivity.api.friends())
+            pending.addAll(mainActivity.api.friends.pending())
+            refreshing = false
+        }
+    })
     LaunchedEffect(mainActivity, reload){
         withContext(Dispatchers.IO){
             friends.clear()
@@ -52,15 +66,24 @@ fun HomeScreen(doReload: () -> Unit, drawerState: DrawerState){
                     Tab(tab == 0, { tab = 0 }, text = { Text("Friends") })
                     Tab(tab == 1, { tab = 1}, text = { Text("Pending") })
                 }
-                LazyColumn {
-                    when(tab){
-                        0 -> items(friends){
-                            FriendLine(it) { reload = !reload }
-                        }
-                        1 -> items(pending){
-                            PendingLine(it) { reload = !reload }
+                Box(Modifier.weight(1f).pullRefresh(pullState)) {
+                    LazyColumn(Modifier.fillMaxSize()) {
+                        if(!refreshing){
+                            when(tab){
+                                0 -> items(friends){
+                                    FriendLine(it) { reload = !reload }
+                                }
+                                1 -> items(pending){
+                                    PendingLine(it) { reload = !reload }
+                                }
+                            }
                         }
                     }
+                    PullRefreshIndicator(
+                        refreshing,
+                        pullState,
+                        Modifier.align(alignment = Alignment.TopCenter)
+                    )
                 }
             }
         }
@@ -93,7 +116,7 @@ fun FriendLine(friend: ApiService.FriendsRoute.Friend, reload: () -> Unit){
             Image(painterResource(fr.imacaron.flashplayerrevival.R.drawable.logo), null, Modifier.size(56.dp))
         }
         Text(friend.nickname)
-        IconButton({ scope.launch { reload() } }){
+        IconButton({ scope.launch { friend.delete(); reload() } }){
             Icon(Icons.Default.Delete, null)
         }
     }
