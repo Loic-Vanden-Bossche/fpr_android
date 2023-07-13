@@ -50,6 +50,7 @@ fun MessageContainer(groupId: UUID, self: UserResponse?, drawerState: DrawerStat
     val scope = rememberCoroutineScope()
     val messageState = rememberLazyListState()
     var longPress: MessageResponse? by remember { mutableStateOf(null) }
+    var editMode: UUID? by remember { mutableStateOf(null) }
     LaunchedEffect(messageState.canScrollForward){
         if(!messageState.canScrollForward && messages.size >= 20){
             group?.messages(messages.size / 20, 20)?.forEach {
@@ -58,11 +59,19 @@ fun MessageContainer(groupId: UUID, self: UserResponse?, drawerState: DrawerStat
         }
     }
     LaunchedEffect(newMessage){
-        newMessage?.let {
-            if(it.group == groupId){
-                messages.add(0, it.toMessageResponse())
+        newMessage?.let { nMessage ->
+            if(nMessage.group == groupId){
+                if(messages.size > 0 && (messages[0].createdAt > nMessage.createdAt || messages[0].id == nMessage.id)){
+                    messages.indexOfFirst { it.id == nMessage.id }.let { index ->
+                        if(index != -1){
+                            messages[index] = nMessage.toMessageResponse()
+                        }
+                    }
+                } else{
+                    messages.add(0, nMessage.toMessageResponse())
+                }
             }else {
-                mainActivity.messageNotification(it)
+                mainActivity.messageNotification(nMessage)
             }
         }
     }
@@ -76,7 +85,21 @@ fun MessageContainer(groupId: UUID, self: UserResponse?, drawerState: DrawerStat
         }
     }
     Scaffold(
-        bottomBar = { if(longPress != null) BottomBar(self, group, longPress!!, { removed -> messages.removeIf { it.id == removed } }) { longPress = null } },
+        bottomBar = {
+            if(longPress != null) {
+                BottomBar(
+                    self,
+                    group,
+                    longPress!!,
+                    { removed -> messages.removeIf { it.id == removed } },
+                    { longPress = null },
+                    {
+                        editMode = it.id
+                        input = it.message
+                    }
+                )
+            }
+        },
         topBar = { TopBar(group?.name ?: "") { scope.launch { drawerState.open() }} }) {
         Surface(
             Modifier.fillMaxSize().padding(it),
@@ -101,8 +124,15 @@ fun MessageContainer(groupId: UUID, self: UserResponse?, drawerState: DrawerStat
                     )
                     ElevatedButton( {
                         scope.launch(Dispatchers.IO){
-                            group?.send(input)
-                            input = ""
+                            if(editMode == null){
+                                group?.send(input)
+                                input = ""
+                            } else {
+                                group?.editMessage(input, editMode!!)
+                                input = ""
+                                editMode = null
+                                longPress = null
+                            }
                         }
                     }){
                         Text(stringResource(R.string.send))
@@ -136,7 +166,7 @@ fun Message(text: String, date: Date, user: UserMessageResponse, self: Boolean, 
 }
 
 @Composable
-fun BottomBar(self: UserResponse?, group: ApiService.GroupsRoute.Group?, message: MessageResponse, onRemove: (UUID) -> Unit, close: () -> Unit){
+fun BottomBar(self: UserResponse?, group: ApiService.GroupsRoute.Group?, message: MessageResponse, onRemove: (UUID) -> Unit, close: () -> Unit, onEdit: (MessageResponse) -> Unit){
     val scope = rememberCoroutineScope()
     BottomAppBar {
         IconButton(close){
@@ -144,7 +174,9 @@ fun BottomBar(self: UserResponse?, group: ApiService.GroupsRoute.Group?, message
         }
         Box(Modifier.weight(1f))
         if(message.user.id == self?.id){
-            IconButton({}){
+            IconButton({
+                onEdit(message)
+            }){
                 Icon(Icons.Default.Edit, null)
             }
             IconButton({

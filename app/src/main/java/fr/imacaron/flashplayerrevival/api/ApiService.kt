@@ -2,6 +2,7 @@ package fr.imacaron.flashplayerrevival.api
 
 import fr.imacaron.flashplayerrevival.api.dto.`in`.AddFriend
 import fr.imacaron.flashplayerrevival.api.dto.`in`.CreateGroup
+import fr.imacaron.flashplayerrevival.api.dto.`in`.EditMessage
 import fr.imacaron.flashplayerrevival.api.dto.`in`.SendMessage
 import fr.imacaron.flashplayerrevival.api.dto.out.*
 import fr.imacaron.flashplayerrevival.api.resources.Friends
@@ -36,6 +37,10 @@ import kotlin.collections.set
 
 class ApiService(private val token: String) {
 
+    companion object {
+        const val HOST = "192.168.129.233"
+    }
+
     private val httpClient = HttpClient {
         install(ContentNegotiation) {
             json()
@@ -47,7 +52,7 @@ class ApiService(private val token: String) {
         defaultRequest {
             url {
                 protocol = URLProtocol.HTTP
-                host = "192.168.1.63"
+                host = HOST
                 port = 8080
                 path("api/")
             }
@@ -81,7 +86,7 @@ class ApiService(private val token: String) {
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun initSocket(){
         withContext(Dispatchers.IO){
-            httpClient.webSocket(method = HttpMethod.Get, host = "192.168.1.63", port = 8080, path = "/socket"){
+            httpClient.webSocket(method = HttpMethod.Get, host = HOST, port = 8080, path = "/socket"){
                 send("CONNECT\nAuthorization:$token\naccept-version:1.1,1.0\nheart-beat:10000,10000\n\n".encodeToByteArray())
                 send(byteArrayOf(0))
                 incoming.receive() as Frame.Text
@@ -96,7 +101,7 @@ class ApiService(private val token: String) {
                                 totalSub++
                             }
                             STOMPMethod.SEND -> {
-                                send("SEND\ndestination:/app/${writeMessage.groupId}/messages\ncontent-length:${writeMessage.message.length+1}\n\n${writeMessage.message}\n")
+                                send("SEND\ndestination:/app/${writeMessage.groupId}/messages${writeMessage.destination}\ncontent-length:${writeMessage.message.length+1}\n\n${writeMessage.message}\n")
                                 send(EOF)
                             }
                             else -> throw RuntimeException("Unsupported send of method ${writeMessage.type}")
@@ -183,6 +188,11 @@ class ApiService(private val token: String) {
             suspend fun send(text: String){
                 val data = Json.encodeToString<SendMessage>(SendMessage(text))
                 writeMessageChannel.send(WriteMessage(data, id, STOMPMethod.SEND))
+            }
+
+            suspend fun editMessage(message: String, id: UUID){
+                val data = Json.encodeToString(EditMessage(id, message))
+                writeMessageChannel.send(WriteMessage(data, this@Group.id, STOMPMethod.SEND, "/edit"))
             }
 
             suspend fun deleteMessage(id: UUID){
