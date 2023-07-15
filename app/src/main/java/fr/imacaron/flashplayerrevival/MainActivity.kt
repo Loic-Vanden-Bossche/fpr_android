@@ -68,20 +68,20 @@ class MainActivity : ComponentActivity() {
         private val tokenKey = stringPreferencesKey("token")
     }
 
-    lateinit var api: ApiService
+    val api: ApiService = ApiService(this)
 
     suspend fun token(): String? = dataStore.data.map { it[tokenKey] }.first()
 
     suspend fun token(token: String) = dataStore.edit { it[tokenKey] = token }
 
-    @OptIn(DelicateCoroutinesApi::class, ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
+    @OptIn(DelicateCoroutinesApi::class, ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         intent.extras?.let {
             it.getString("token")?.let { token ->
                 GlobalScope.launch {
                     token(token)
-                    api = ApiService(token)
+                    api.token = token
                     api.initSocket()
                 }
             } ?: GlobalScope.launch { resume() }
@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun resume(){
         token()?.let {
-            api = ApiService(it)
+            api.token = it
             api.initSocket()
         } ?: run {
             startActivity(Intent(this, LoginActivity::class.java))

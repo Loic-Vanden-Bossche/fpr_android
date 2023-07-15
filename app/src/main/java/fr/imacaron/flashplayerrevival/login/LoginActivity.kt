@@ -29,8 +29,8 @@ import androidx.navigation.compose.rememberNavController
 import fr.imacaron.flashplayerrevival.MainActivity
 import fr.imacaron.flashplayerrevival.R
 import fr.imacaron.flashplayerrevival.api.dto.`in`.Login
-import fr.imacaron.flashplayerrevival.api.dto.out.LoginResponse
 import fr.imacaron.flashplayerrevival.api.dto.`in`.Register
+import fr.imacaron.flashplayerrevival.api.dto.out.LoginResponse
 import fr.imacaron.flashplayerrevival.api.error.ConflictingUser
 import fr.imacaron.flashplayerrevival.api.error.InvalidField
 import fr.imacaron.flashplayerrevival.api.error.LoginError
@@ -50,7 +50,6 @@ import io.ktor.http.*
 import io.ktor.resources.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.*

@@ -1,5 +1,6 @@
 package fr.imacaron.flashplayerrevival.api
 
+import fr.imacaron.flashplayerrevival.MainActivity
 import fr.imacaron.flashplayerrevival.api.dto.`in`.*
 import fr.imacaron.flashplayerrevival.api.dto.out.*
 import fr.imacaron.flashplayerrevival.api.resources.Friends
@@ -20,23 +21,23 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.net.ConnectException
 import java.util.*
 import kotlin.collections.set
 
-class ApiService(private val token: String) {
+class ApiService(activity: MainActivity) {
 
     companion object {
         const val HOST = "192.168.1.63"
     }
+
+    var token: String = ""
 
     private val httpClient = HttpClient {
         install(ContentNegotiation) {
@@ -61,7 +62,9 @@ class ApiService(private val token: String) {
                 val clientException = exception as? ClientRequestException ?: return@handleResponseExceptionWithRequest
                 val exceptionResponse = clientException.response
                 when (exceptionResponse.status) {
-
+                    HttpStatusCode.Unauthorized -> {
+                        activity.disconnect()
+                    }
                 }
             }
         }
@@ -80,65 +83,101 @@ class ApiService(private val token: String) {
 
     private val EOF: ByteArray = byteArrayOf(0)
 
+    private suspend fun DefaultClientWebSocketSession.receive(){
+        try {
+            for(message in incoming){
+                val text = (message as? Frame.Text ?: continue).readText().lines()
+                if(text.none()){
+                    continue
+                }
+                text.first().let {
+                    when(it) {
+                        "MESSAGE" -> {
+                            var i = 1
+                            val headers = mutableMapOf<String, String>()
+                            while(text[i].isNotBlank()){
+                                headers[text[i].split(":")[0]] = text[i].split(":")[1]
+                                i++
+                            }
+                            try{
+                                val data = text.subList(i, text.size).joinToString("").let { temp ->
+                                    Json.decodeFromString<MessageResponse>(temp.substring(0, temp.length - 1))
+                                }
+                                val msg = ReceivedMessage(
+                                    data.id,
+                                    data.user,
+                                    data.message,
+                                    data.createdAt,
+                                    UUID.fromString(headers["destination"]!!.split("/")[2]),
+                                    data.type
+                                )
+                                messageChannel.send(msg)
+                            }catch (e: Exception){
+                                e.printStackTrace()
+                            }
+                        }
+                    }
+                }
+            }
+        }catch (e: Exception){
+            println("Error in receive : ${e.localizedMessage}")
+        }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
+    private suspend fun DefaultClientWebSocketSession.send(){
+        var totalSub = 0
+        while(true){
+            while(writeMessageChannel.isEmpty){
+                if(outgoing.isClosedForSend){
+                    return
+                }
+            }
+            val writeMessage = writeMessageChannel.receive()
+            try {
+                when(writeMessage.type){
+                    STOMPMethod.SUBSCRIBE -> {
+                        send("SUBSCRIBE\nid:sub-$totalSub\ndestination:/groups/${writeMessage.groupId}/messages\n\n")
+                        send(EOF)
+                        totalSub++
+                    }
+                    STOMPMethod.SEND -> {
+                        send("SEND\ndestination:/app/${writeMessage.groupId}/messages${writeMessage.destination}\ncontent-length:${writeMessage.message.length+1}\n\n${writeMessage.message}\n")
+                        send(EOF)
+                    }
+                    else -> throw RuntimeException("Unsupported send of method ${writeMessage.type}")
+                }
+            }catch (e: Exception){
+                println("Error in send : ${e.localizedMessage}")
+                return
+            }
+        }
+    }
+
     suspend fun initSocket(){
         withContext(Dispatchers.IO){
-            httpClient.webSocket(method = HttpMethod.Get, host = HOST, port = 8080, path = "/socket"){
-                send("CONNECT\nAuthorization:$token\naccept-version:1.1,1.0\nheart-beat:10000,10000\n\n".encodeToByteArray())
-                send(byteArrayOf(0))
-                incoming.receive() as Frame.Text
-                launch {
-                    var totalSub = 0
-                    while(true){
-                        val writeMessage = writeMessageChannel.receive()
-                        when(writeMessage.type){
-                            STOMPMethod.SUBSCRIBE -> {
-                                send("SUBSCRIBE\nid:sub-$totalSub\ndestination:/groups/${writeMessage.groupId}/messages\n\n")
-                                send(EOF)
-                                totalSub++
-                            }
-                            STOMPMethod.SEND -> {
-                                send("SEND\ndestination:/app/${writeMessage.groupId}/messages${writeMessage.destination}\ncontent-length:${writeMessage.message.length+1}\n\n${writeMessage.message}\n")
-                                send(EOF)
-                            }
-                            else -> throw RuntimeException("Unsupported send of method ${writeMessage.type}")
-                        }
+            var nTry = 0
+            while (true) {
+                try {
+                    httpClient.webSocket(method = HttpMethod.Get, host = HOST, port = 8080, path = "/socket") {
+                        send("CONNECT\nAuthorization:$token\naccept-version:1.1,1.0\nheart-beat:10000,10000\n\n".encodeToByteArray())
+                        send(byteArrayOf(0))
+                        incoming.receive() as Frame.Text
+
+                        val messageOutputRoutine = launch { receive() }
+                        val userInput = launch { send() }
+
+                        this@ApiService.groups().forEach { it.connect() }
+
+                        userInput.join()
+                        messageOutputRoutine.cancelAndJoin()
+                        nTry = 0
                     }
+                }catch (e: ConnectException){
+                    println(e.localizedMessage)
+                    nTry++
                 }
-                while(!incoming.isClosedForReceive){
-                    val text = (incoming.receive() as Frame.Text).readText().lines()
-                    if(text.none()){
-                        continue
-                    }
-                    text.first().let {
-                        when(it) {
-                            "MESSAGE" -> {
-                                var i = 1
-                                val headers = mutableMapOf<String, String>()
-                                while(text[i].isNotBlank()){
-                                    headers[text[i].split(":")[0]] = text[i].split(":")[1]
-                                    i++
-                                }
-                                try{
-                                    val data = text.subList(i, text.size).joinToString("").let { temp ->
-                                        Json.decodeFromString<MessageResponse>(temp.substring(0, temp.length - 1))
-                                    }
-                                    val msg = ReceivedMessage(
-                                        data.id,
-                                        data.user,
-                                        data.message,
-                                        data.createdAt,
-                                        UUID.fromString(headers["destination"]!!.split("/")[2]),
-                                        data.type
-                                    )
-                                    messageChannel.send(msg)
-                                }catch (e: Exception){
-                                    e.printStackTrace()
-                                }
-                            }
-                        }
-                    }
-                }
+                delay(1000L + 5000L * nTry)
             }
         }
     }
@@ -172,6 +211,7 @@ class ApiService(private val token: String) {
         inner class Group(
             private val original: GroupResponse
         ) {
+
             val id: UUID get() = UUID.fromString(original.id)
             val name: String get() = original.name
             val type: GroupType get() = original.type

@@ -51,8 +51,7 @@ fun NavDrawerSheet(drawerState: DrawerState, navigator: NavHostController, self:
         scope.launch(Dispatchers.IO) {
             refreshing = true
             groups.clear()
-            context.api.groups().map {
-                it.connect()
+            context.api.groups().forEach {
                 groups.add(it)
             }
             refreshing = false
@@ -60,13 +59,11 @@ fun NavDrawerSheet(drawerState: DrawerState, navigator: NavHostController, self:
     })
     LaunchedEffect(context, reload){
         groups.clear()
-        context.api.groups().map {
-            it.connect()
+        context.api.groups().forEach {
             groups.add(it)
         }
         friends.clear()
         friends.addAll(context.api.friends())
-        println(friends.size)
     }
     ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.primary, drawerShape = RectangleShape) {
         RoundedTextField(search, { search = it }, Modifier.padding(8.dp).fillMaxWidth(), label = { Text(stringResource(R.string.search_contact)) })
