@@ -12,5 +12,12 @@ data class MessageResponse(
     val user: UserMessageResponse,
     val message: String,
     @Serializable(with = DateSerializer::class)
-    val createdAt: Date
+    val createdAt: Date,
+    val type: MessageResponseType
 )
+
+enum class MessageResponseType {
+    NEW,
+    EDIT,
+    DELETE
+}

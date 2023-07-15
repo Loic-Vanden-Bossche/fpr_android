@@ -14,7 +14,8 @@ data class ReceivedMessage(
     @Serializable(with = DateSerializer::class)
     val createdAt: Date,
     @Serializable(with = UUIDSerializer::class)
-    val group: UUID
+    val group: UUID,
+    val type: MessageResponseType
 ){
-    fun toMessageResponse(): MessageResponse = MessageResponse(id, user, message, createdAt)
+    fun toMessageResponse(): MessageResponse = MessageResponse(id, user, message, createdAt, type)
 }

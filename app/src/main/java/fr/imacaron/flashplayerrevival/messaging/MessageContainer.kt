@@ -31,6 +31,7 @@ import fr.imacaron.flashplayerrevival.R
 import fr.imacaron.flashplayerrevival.TopBar
 import fr.imacaron.flashplayerrevival.api.ApiService
 import fr.imacaron.flashplayerrevival.api.dto.out.MessageResponse
+import fr.imacaron.flashplayerrevival.api.dto.out.MessageResponseType
 import fr.imacaron.flashplayerrevival.api.dto.out.UserMessageResponse
 import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.components.RoundedTextField
@@ -61,14 +62,20 @@ fun MessageContainer(groupId: UUID, self: UserResponse?, drawerState: DrawerStat
     LaunchedEffect(newMessage){
         newMessage?.let { nMessage ->
             if(nMessage.group == groupId){
-                if(messages.size > 0 && (messages[0].createdAt > nMessage.createdAt || messages[0].id == nMessage.id)){
-                    messages.indexOfFirst { it.id == nMessage.id }.let { index ->
-                        if(index != -1){
-                            messages[index] = nMessage.toMessageResponse()
+                when (nMessage.type) {
+                    MessageResponseType.EDIT -> {
+                        messages.indexOfFirst { it.id == nMessage.id }.let { index ->
+                            if(index != -1){
+                                messages[index] = nMessage.toMessageResponse()
+                            }
                         }
                     }
-                } else{
-                    messages.add(0, nMessage.toMessageResponse())
+                    MessageResponseType.NEW -> {
+                        messages.add(0, nMessage.toMessageResponse())
+                    }
+                    MessageResponseType.DELETE -> {
+                        messages.removeAll { it.id == nMessage.id }
+                    }
                 }
             }else {
                 mainActivity.messageNotification(nMessage)
@@ -91,7 +98,6 @@ fun MessageContainer(groupId: UUID, self: UserResponse?, drawerState: DrawerStat
                     self,
                     group,
                     longPress!!,
-                    { removed -> messages.removeIf { it.id == removed } },
                     { longPress = null },
                     {
                         editMode = it.id
@@ -166,7 +172,7 @@ fun Message(text: String, date: Date, user: UserMessageResponse, self: Boolean, 
 }
 
 @Composable
-fun BottomBar(self: UserResponse?, group: ApiService.GroupsRoute.Group?, message: MessageResponse, onRemove: (UUID) -> Unit, close: () -> Unit, onEdit: (MessageResponse) -> Unit){
+fun BottomBar(self: UserResponse?, group: ApiService.GroupsRoute.Group?, message: MessageResponse, close: () -> Unit, onEdit: (MessageResponse) -> Unit){
     val scope = rememberCoroutineScope()
     BottomAppBar {
         IconButton(close){
@@ -181,7 +187,6 @@ fun BottomBar(self: UserResponse?, group: ApiService.GroupsRoute.Group?, message
             }
             IconButton({
                 scope.launch { group?.deleteMessage(message.id) }
-                onRemove(message.id)
                 close()
             }){
                 Icon(Icons.Default.Delete, null)

@@ -1,9 +1,6 @@
 package fr.imacaron.flashplayerrevival.api
 
-import fr.imacaron.flashplayerrevival.api.dto.`in`.AddFriend
-import fr.imacaron.flashplayerrevival.api.dto.`in`.CreateGroup
-import fr.imacaron.flashplayerrevival.api.dto.`in`.EditMessage
-import fr.imacaron.flashplayerrevival.api.dto.`in`.SendMessage
+import fr.imacaron.flashplayerrevival.api.dto.`in`.*
 import fr.imacaron.flashplayerrevival.api.dto.out.*
 import fr.imacaron.flashplayerrevival.api.resources.Friends
 import fr.imacaron.flashplayerrevival.api.resources.Groups
@@ -38,7 +35,7 @@ import kotlin.collections.set
 class ApiService(private val token: String) {
 
     companion object {
-        const val HOST = "192.168.129.233"
+        const val HOST = "192.168.1.63"
     }
 
     private val httpClient = HttpClient {
@@ -131,7 +128,8 @@ class ApiService(private val token: String) {
                                         data.user,
                                         data.message,
                                         data.createdAt,
-                                        UUID.fromString(headers["destination"]!!.split("/")[2])
+                                        UUID.fromString(headers["destination"]!!.split("/")[2]),
+                                        data.type
                                     )
                                     messageChannel.send(msg)
                                 }catch (e: Exception){
@@ -196,8 +194,8 @@ class ApiService(private val token: String) {
             }
 
             suspend fun deleteMessage(id: UUID){
-//                httpClient.delete(Groups.Id.Messages.Id(Groups.Id.Messages(Groups.Id(id = this.id)), id))
-                httpClient.delete("/api/groups/${this.id}/messages/$id")
+                val data = Json.encodeToString(DeleteMessage(id))
+                writeMessageChannel.send(WriteMessage(data, this@Group.id, STOMPMethod.SEND, "/delete"))
             }
         }
     }
