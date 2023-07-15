@@ -34,7 +34,8 @@ import kotlin.collections.set
 class ApiService(activity: MainActivity) {
 
     companion object {
-        const val HOST = "192.168.1.63"
+        const val HOST = "api.flash-player-revival.net"
+//        const val HOST = "192.168.1.63"
     }
 
     var token: String = ""
@@ -49,9 +50,10 @@ class ApiService(activity: MainActivity) {
         }
         defaultRequest {
             url {
-                protocol = URLProtocol.HTTP
+//                protocol = URLProtocol.HTTP
+                protocol = URLProtocol.HTTPS
                 host = HOST
-                port = 8080
+//                port = 8080
                 path("api/")
             }
             bearerAuth(token)

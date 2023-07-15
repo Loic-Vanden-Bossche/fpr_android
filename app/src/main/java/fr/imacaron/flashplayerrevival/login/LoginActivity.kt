@@ -62,9 +62,11 @@ class LoginActivity : ComponentActivity() {
 		}
 		defaultRequest {
 			url {
-				protocol = URLProtocol.HTTP
-				host = "192.168.1.63"
-				port = 8080
+//				protocol = URLProtocol.HTTP
+				protocol = URLProtocol.HTTPS
+				host = "api.flash-player-revival.net"
+//				host = "192.168.1.63"
+//				port = 8080
 				path("api/")
 			}
 		}
