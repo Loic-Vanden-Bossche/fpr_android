@@ -161,7 +161,7 @@ class ApiService(activity: MainActivity) {
             var nTry = 0
             while (true) {
                 try {
-                    httpClient.webSocket(method = HttpMethod.Get, host = HOST, port = 8080, path = "/socket") {
+                    httpClient.webSocket(method = HttpMethod.Get, host = HOST, path = "/socket") {
                         send("CONNECT\nAuthorization:$token\naccept-version:1.1,1.0\nheart-beat:10000,10000\n\n".encodeToByteArray())
                         send(byteArrayOf(0))
                         incoming.receive() as Frame.Text
