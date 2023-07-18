@@ -5,16 +5,13 @@ import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.resources.*
-import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.content.*
-import io.ktor.serialization.kotlinx.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.util.*
 import io.ktor.util.network.*
 import io.ktor.utils.io.*
-import kotlinx.serialization.json.Json
 
 internal object ApiService{
     const val HOST = "api.flash-player-revival.net"
@@ -30,9 +27,6 @@ internal object ApiService{
             json()
         }
         install(Resources)
-        install(WebSockets) {
-            contentConverter = KotlinxWebsocketSerializationConverter(Json)
-        }
         defaultRequest {
             url {
                 protocol = PROTOCOL
@@ -40,7 +34,9 @@ internal object ApiService{
                 port = PORT
                 path("api/")
             }
-            bearerAuth(token)
+            if(token != ""){
+                bearerAuth(token)
+            }
         }
         expectSuccess = true
         HttpResponseValidator {

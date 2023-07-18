@@ -65,7 +65,7 @@ class ApiService(activity: MainActivity) {
                 val exceptionResponse = clientException.response
                 when (exceptionResponse.status) {
                     HttpStatusCode.Unauthorized -> {
-                        activity.disconnect()
+//                        activity.disconnect()
                     }
                 }
             }
@@ -195,7 +195,7 @@ class ApiService(activity: MainActivity) {
     val friends: FriendsRoute = FriendsRoute()
 
     inner class SelfRoute {
-        suspend operator fun invoke(): UserResponse = httpClient.get(Profile()).body()
+        suspend operator fun invoke(): UserResponse = httpClient.get(Profile()).body<UserResponse>().apply { println("Old self") }
     }
 
     inner class GroupsRoute{

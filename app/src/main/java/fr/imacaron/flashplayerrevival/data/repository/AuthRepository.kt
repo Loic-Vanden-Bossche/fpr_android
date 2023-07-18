@@ -7,7 +7,11 @@ import fr.imacaron.flashplayerrevival.data.api.ApiService
 import fr.imacaron.flashplayerrevival.data.api.resources.Auth
 
 class AuthRepository {
-    suspend fun login(email: String, password: String): LoginResponse = ApiService.post(Auth.Login(), Login(email, password))
+    suspend fun login(email: String, password: String): LoginResponse = ApiService.post<Auth.Login, LoginResponse, Login>(Auth.Login(), Login(email, password)).apply {
+        ApiService.token = token
+    }
 
-    suspend fun register(email: String, password: String, pseudo: String): LoginResponse = ApiService.post(Auth.Register(), Register(email, password, pseudo))
+    suspend fun register(email: String, password: String, pseudo: String): LoginResponse = ApiService.post<Auth.Register, LoginResponse, Register>(Auth.Register(), Register(email, password, pseudo)).apply {
+        ApiService.token = token
+    }
 }

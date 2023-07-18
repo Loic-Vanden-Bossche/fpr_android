@@ -7,11 +7,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -21,20 +20,12 @@ import fr.imacaron.flashplayerrevival.components.BorderCard
 import fr.imacaron.flashplayerrevival.components.PaleText
 import fr.imacaron.flashplayerrevival.components.PasswordField
 import fr.imacaron.flashplayerrevival.components.TextField
+import fr.imacaron.flashplayerrevival.state.viewmodel.LoginViewModel
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
-fun SignInCard(goToLogin: () -> Unit){
-	val context = LocalContext.current
-	var mail by remember { mutableStateOf("") }
-	var pseudo by remember { mutableStateOf("") }
-	var password by remember { mutableStateOf("") }
-	var error by remember { mutableStateOf(false) }
-	var loading by remember { mutableStateOf(false) }
+fun SignInCard(viewModel: LoginViewModel){
 	BorderCard(Modifier.padding(8.dp)) {
 		Column(
 			Modifier.fillMaxWidth().padding(32.dp),
@@ -46,67 +37,45 @@ fun SignInCard(goToLogin: () -> Unit){
 				Text(stringResource(R.string.credSignIn), style = MaterialTheme.typography.titleLarge)
 			}
 			TextField(
-				mail,
-				{ mail = it },
+				viewModel.email,
+				{ viewModel.email = it },
 				Modifier.fillMaxWidth(),
 				{ Text(stringResource(R.string.mail)) },
-				isError = error,
+				isError = viewModel.error,
 				keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
 				singleLine = true
 			)
 			TextField(
-				pseudo,
-				{ pseudo = it },
+				viewModel.pseudo,
+				{ viewModel.pseudo = it },
 				Modifier.fillMaxWidth(),
 				{ Text(stringResource(R.string.pseudo))},
-				isError = error,
+				isError = viewModel.error,
 				keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
 				singleLine = true
 			)
 			PasswordField(
-				password,
-				{ password = it },
+				viewModel.password,
+				{ viewModel.password = it },
 				Modifier.fillMaxWidth(),
 				{ Text(stringResource(R.string.password)) },
-				isError = error,
-				keyboardActions = KeyboardActions(onDone = {
-					loading = true
-					GlobalScope.launch(Dispatchers.IO) {
-						if((context as LoginActivity).register(mail, password, pseudo)){
-							mail = ""
-							password = ""
-						}else {
-							error = true
-						}
-						loading = false
-					}
-				})
+				isError = viewModel.error,
+				keyboardActions = KeyboardActions(onDone = { viewModel.register() })
 			)
 			Button(
-				{
-					loading = true
-					GlobalScope.launch(Dispatchers.IO) {
-						if((context as LoginActivity).register(mail, password, pseudo)){
-							mail = ""
-							password = ""
-						}else {
-							error = true
-						}
-						loading = false
-					}
-				},
+				{ viewModel.register() },
 				Modifier.fillMaxWidth().shadow(
 					10.dp,
 					shape = MaterialTheme.shapes.extraLarge,
 					spotColor = MaterialTheme.colorScheme.primary
 				),
-				enabled = !loading
+				enabled = !viewModel.loading
 			) {
 				Text(stringResource(R.string.signup))
 			}
 			Row(verticalAlignment = Alignment.CenterVertically) {
 				PaleText(stringResource(R.string.alreadyRegister))
-				TextButton(goToLogin) {
+				TextButton({ viewModel.toLogIn() }) {
 					Text(stringResource(R.string.signin))
 				}
 			}

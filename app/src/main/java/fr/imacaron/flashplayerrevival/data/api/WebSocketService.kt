@@ -7,6 +7,7 @@ import fr.imacaron.flashplayerrevival.api.type.WriteMessage
 import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -29,6 +30,12 @@ object WebSocketService {
     var connecting: Boolean = false
 
     private var groups: MutableList<UUID> = mutableListOf()
+
+    private val httpClient = HttpClient {
+        install(WebSockets) {
+            contentConverter = KotlinxWebsocketSerializationConverter(Json)
+        }
+    }
 
     val messageFlow: Flow<ReceivedMessage> = flow {
         while(true){
@@ -113,7 +120,7 @@ object WebSocketService {
             var nTry = 0
             while (true) {
                 try {
-                    HttpClient().webSocket(method = HttpMethod.Get, host = ApiService.HOST, path = "/socket") {
+                    httpClient.webSocket(method = HttpMethod.Get, host = ApiService.HOST, path = "/socket") {
                         connecting = false
                         send("CONNECT\nAuthorization:$token\naccept-version:1.1,1.0\nheart-beat:10000,10000\n\n".encodeToByteArray())
                         send(EOF)

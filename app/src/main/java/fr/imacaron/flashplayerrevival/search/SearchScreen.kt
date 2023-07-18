@@ -19,42 +19,35 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import fr.imacaron.flashplayerrevival.R
 import fr.imacaron.flashplayerrevival.TopBar
-import fr.imacaron.flashplayerrevival.api.ApiService
+import fr.imacaron.flashplayerrevival.api.dto.out.SearchResponse
 import fr.imacaron.flashplayerrevival.components.RoundedTextField
+import fr.imacaron.flashplayerrevival.state.viewmodel.SearchViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun SearchScreen(api: ApiService, drawerState: DrawerState){
+fun SearchScreen(searchViewModel: SearchViewModel){
     var job: Job? by remember { mutableStateOf(null) }
-    var search by remember { mutableStateOf("") }
-    val users: MutableList<ApiService.UsersRoute.Search> = remember { mutableStateListOf() }
     val scope = rememberCoroutineScope()
-    LaunchedEffect(search){
+    LaunchedEffect(searchViewModel.search){
         job?.let { if(it.isActive) it.cancel() }
         job = launch {
             delay(500)
-            val res = if(search.isNotBlank()){
-                api.users.search(search.trim())
-            }else{
-                mutableListOf()
-            }
-            users.clear()
-            users.addAll(res)
+            searchViewModel.search()
         }
     }
     Scaffold(
-        topBar = { TopBar(stringResource(R.string.app_name)) { scope.launch { drawerState.open() }} }) { pv ->
+        topBar = { TopBar(stringResource(R.string.app_name)) { scope.launch { searchViewModel.drawerState.open() }} }) { pv ->
         Surface(
             Modifier.fillMaxSize().padding(pv),
             color = MaterialTheme.colorScheme.background
         ) {
             Column {
-                RoundedTextField(search, { search = it }, Modifier.padding(8.dp).fillMaxWidth(), { Text(stringResource(R.string.search_user)) })
+                RoundedTextField(searchViewModel.search, { searchViewModel.search = it }, Modifier.padding(8.dp).fillMaxWidth(), { Text(stringResource(R.string.search_user)) })
                 LazyColumn {
-                    items(users) {
-                        UserLine(it)
+                    items(searchViewModel.users) {
+                        UserLine(it, searchViewModel)
                     }
                 }
             }
@@ -63,7 +56,7 @@ fun SearchScreen(api: ApiService, drawerState: DrawerState){
 }
 
 @Composable
-fun UserLine(user: ApiService.UsersRoute.Search){
+fun UserLine(user: SearchResponse, searchViewModel: SearchViewModel){
     val scope = rememberCoroutineScope()
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Surface(Modifier.padding(all = 20.dp), shape = CircleShape, color = MaterialTheme.colorScheme.background) {
@@ -74,7 +67,7 @@ fun UserLine(user: ApiService.UsersRoute.Search){
             "APPROVED" -> Icon(Icons.Default.Done, null)
             "REJECTED" -> Icon(Icons.Default.Close, null)
             "PENDING" -> Icon(Icons.Default.HourglassEmpty, null)
-            else -> IconButton({ scope.launch { user.addFriend() } }){
+            else -> IconButton({ scope.launch { searchViewModel.addFriend(user.id) } }){
                 Icon(Icons.Default.PersonAdd, null)
             }
         }

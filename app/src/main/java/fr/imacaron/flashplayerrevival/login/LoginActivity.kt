@@ -24,7 +24,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import fr.imacaron.flashplayerrevival.MainActivity
 import fr.imacaron.flashplayerrevival.R
@@ -88,6 +87,7 @@ class LoginActivity : ComponentActivity() {
 		val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "login")
 		val mailKey = stringPreferencesKey("email")
 		val passwordKey = stringPreferencesKey("password")
+		val tokenKey = stringPreferencesKey("token")
 	}
 
 	@SuppressLint("SourceLockedOrientationActivity")
@@ -111,8 +111,8 @@ class LoginActivity : ComponentActivity() {
 					Column(Modifier.padding(top = pt).height(10.dp), verticalArrangement = cardPlacement) {
 						Logo()
 						NavHost(loginNav, "login"){
-							composable("login") { LoginCard { loginNav.navigate("signin") } }
-							composable("signin") { SignInCard { loginNav.navigate("login") } }
+//							composable("login") { LoginCard(loginViewModel) { loginNav.navigate("signin") } }
+//							composable("signin") { SignInCard { loginNav.navigate("login") } }
 						}
 					}
 				}

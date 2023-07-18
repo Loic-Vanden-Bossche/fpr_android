@@ -2,7 +2,7 @@ package fr.imacaron.flashplayerrevival.api.dto.out
 
 import fr.imacaron.flashplayerrevival.utils.serializer.UUIDSerializer
 import kotlinx.serialization.Serializable
-import java.util.UUID
+import java.util.*
 
 @Serializable
 data class UserResponse(
@@ -14,4 +14,5 @@ data class UserResponse(
     val coins: Int,
     val updatedAt: String,
     val createdAt: String,
+    val picture: String? = null
 )

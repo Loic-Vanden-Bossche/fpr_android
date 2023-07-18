@@ -1,6 +1,7 @@
 package fr.imacaron.flashplayerrevival.data.repository
 
 import fr.imacaron.flashplayerrevival.api.dto.`in`.AddFriend
+import fr.imacaron.flashplayerrevival.api.dto.out.SearchResponse
 import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.data.api.ApiService
 import fr.imacaron.flashplayerrevival.data.api.resources.Friends
@@ -10,9 +11,9 @@ import java.util.*
 
 class UserRepository {
 
-    suspend fun self(): UserResponse = ApiService.get(Profile())
+    suspend fun self(): UserResponse = ApiService.get<Profile, UserResponse>(Profile()).apply { println("New self") }
 
-    suspend fun search(search: String): List<UserResponse> = ApiService.get(Users.Search(search = search))
+    suspend fun search(search: String): List<SearchResponse> = ApiService.get(Users.Search(search = search))
 
     suspend fun addFriend(id: UUID): Unit = ApiService.post(Friends(), AddFriend(id))
 

@@ -10,14 +10,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import fr.imacaron.flashplayerrevival.R
-import fr.imacaron.flashplayerrevival.api.ApiService
+import fr.imacaron.flashplayerrevival.api.dto.out.GroupResponse
 import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
+import fr.imacaron.flashplayerrevival.data.repository.GroupRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateGroupModal(api: ApiService, dismiss: () -> Unit, addGroup: (ApiService.GroupsRoute.Group) -> Unit, self: UserResponse?, friends: List<ApiService.FriendsRoute.Friend>){
+fun CreateGroupModal(dismiss: () -> Unit, addGroup: (GroupResponse) -> Unit, self: UserResponse?, friends: List<UserResponse>){
     val check: MutableList<Boolean> = remember { mutableStateListOf() }
     val scope = rememberCoroutineScope()
     check.addAll(List(friends.size) { false })
@@ -43,7 +44,7 @@ fun CreateGroupModal(api: ApiService, dismiss: () -> Unit, addGroup: (ApiService
                     }
                     Button( {
                         scope.launch(Dispatchers.IO) {
-                            addGroup(api.groups.create(friends.filterIndexed { index, _ -> check[index] }.map { it.original } + self!!))
+                            addGroup(GroupRepository().create(friends.filterIndexed { index, _ -> check[index] } + self!!))
                             dismiss()
                         }
                     } ){

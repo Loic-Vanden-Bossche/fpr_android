@@ -7,85 +7,53 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.core.os.bundleOf
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavType
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import fr.imacaron.flashplayerrevival.api.ApiService
 import fr.imacaron.flashplayerrevival.api.dto.out.ReceivedMessage
-import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
-import fr.imacaron.flashplayerrevival.drawer.NavDrawerSheet
-import fr.imacaron.flashplayerrevival.home.HomeScreen
-import fr.imacaron.flashplayerrevival.login.LoginActivity
-import fr.imacaron.flashplayerrevival.messaging.MessageContainer
-import fr.imacaron.flashplayerrevival.search.SearchScreen
+import fr.imacaron.flashplayerrevival.data.repository.GroupRepository
+import fr.imacaron.flashplayerrevival.data.repository.UserRepository
+import fr.imacaron.flashplayerrevival.login.LoginRegister
+import fr.imacaron.flashplayerrevival.login.Main
+import fr.imacaron.flashplayerrevival.screen.Screen
+import fr.imacaron.flashplayerrevival.screen.splash.Splash
+import fr.imacaron.flashplayerrevival.state.viewmodel.AppViewModel
+import fr.imacaron.flashplayerrevival.state.viewmodel.DrawerViewModel
 import fr.imacaron.flashplayerrevival.ui.theme.FlashPlayerRevivalTheme
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import java.util.*
 
 const val CHANNEL_ID = "a4c16ebd-8f12-4f43-8b87-6ad7d47a8f03"
 
 class MainActivity : ComponentActivity() {
 
     companion object {
-        val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "token")
-        private val tokenKey = stringPreferencesKey("token")
+        val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "app")
+        val tokenKey = stringPreferencesKey("token")
+        val mailKey = stringPreferencesKey("email")
+        val passwordKey = stringPreferencesKey("password")
     }
 
     val api: ApiService = ApiService(this)
 
-    suspend fun token(): String? = dataStore.data.map { it[tokenKey] }.first()
-
-    suspend fun token(token: String) = dataStore.edit { it[tokenKey] = token }
-
-    @OptIn(DelicateCoroutinesApi::class, ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        intent.extras?.let {
-            it.getString("token")?.let { token ->
-                GlobalScope.launch {
-                    token(token)
-                    api.token = token
-                    api.initSocket()
-                }
-            } ?: GlobalScope.launch { resume() }
-        } ?: GlobalScope.launch { resume() }
         createNotificationChannel()
         setContent {
             val keyboardController = LocalSoftwareKeyboardController.current
@@ -93,42 +61,34 @@ class MainActivity : ComponentActivity() {
                 keyboardController?.hide()
                 true
             }
-            val mainNav = rememberNavController()
-            var title by remember { mutableStateOf("") }
-            var self: UserResponse? by remember { mutableStateOf(null) }
-            var reload by remember { mutableStateOf(false) }
+            val appNavigator = rememberNavController()
+            val mainNavigator = rememberNavController()
             LaunchedEffect(Unit){
                 intent.extras?.let {
                     it.getString("group")?.let { data ->
-                        mainNav.navigate("message/$data")
+                        mainNavigator.navigate("message/$data")
                     }
                 }
-                self = api.self()
             }
-            title = stringResource(R.string.app_name)
+            val appViewModel: AppViewModel = viewModel {
+                AppViewModel(dataStore, UserRepository(), appNavigator) {
+                    Toast.makeText(this@MainActivity, it, Toast.LENGTH_LONG).show()
+                }
+            }
+            val drawerViewModel: DrawerViewModel = viewModel {
+                DrawerViewModel(mainNavigator, GroupRepository(), UserRepository(), drawerState)
+            }
             FlashPlayerRevivalTheme {
-                ModalNavigationDrawer({
-                    NavDrawerSheet(drawerState, mainNav, self, reload)
-                }, drawerState = drawerState){
-                    NavHost(mainNav, "home"){
-                        composable("home") {
-                            val newMessage by api.messageFlow.collectAsStateWithLifecycle(null)
-                            LaunchedEffect(newMessage){
-                                newMessage?.let { msg ->
-                                    messageNotification(msg)
-                                }
-                            }
-                            HomeScreen({ reload = !reload }, drawerState)
-                        }
-                        composable(
-                            "message/{groupId}",
-                            listOf(navArgument("groupId") { type = NavType.StringType })
-                        ) { backStack ->
-                            val id = backStack.arguments?.getString("groupId")
-                            MessageContainer(UUID.fromString(id), self, drawerState)
-                        }
-                        composable("search"){
-                            SearchScreen(api, drawerState)
+                NavHost(appNavigator, "splash") {
+                    composable(Screen.SplashScreen.route){
+                        Splash()
+                    }
+                    composable(Screen.AppScreen.route){
+                        Main(drawerViewModel, appViewModel)
+                    }
+                    composable(Screen.LoginRegisterScreen.route){
+                        LoginRegister(appNavigator, dataStore) {
+                            Toast.makeText(this@MainActivity, it, Toast.LENGTH_LONG).show()
                         }
                     }
                 }
@@ -136,22 +96,22 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private suspend fun resume(){
-        token()?.let {
-            api.token = it
-            api.initSocket()
-        } ?: run {
-            startActivity(Intent(this, LoginActivity::class.java))
-        }
-    }
+//    private suspend fun resume(){
+//        token()?.let {
+//            api.token = it
+//            api.initSocket()
+//        } ?: run {
+//            startActivity(Intent(this, LoginActivity::class.java))
+//        }
+//    }
 
-    fun disconnect(){
-        runBlocking {
-            dataStore.edit { it.clear() }
-        }
-        finish()
-        startActivity(Intent(this, LoginActivity::class.java))
-    }
+//    fun disconnect(){
+//        runBlocking {
+//            dataStore.edit { it.clear() }
+//        }
+//        finish()
+//        startActivity(Intent(this, LoginActivity::class.java))
+//    }
 
     private fun createNotificationChannel(){
         val name = getString(R.string.channel_name)
@@ -185,16 +145,6 @@ class MainActivity : ComponentActivity() {
         with(notificationManager){
             notify(0, builder.build())
         }
-    }
-}
-
-@Composable
-fun SelectedLine(pseudo: String){
-    Row(Modifier.shadow(10.dp, RectangleShape, spotColor = Color.Black).fillMaxWidth().background(MaterialTheme.colorScheme.surface), verticalAlignment = Alignment.CenterVertically) {
-        Surface(Modifier.padding(all = 20.dp), shape = CircleShape, color = MaterialTheme.colorScheme.surface) {
-            Image(painterResource(R.drawable.logo), null, Modifier.size(56.dp))
-        }
-        Text(pseudo, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
