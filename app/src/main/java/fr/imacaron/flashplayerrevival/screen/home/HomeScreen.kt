@@ -18,11 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import fr.imacaron.flashplayerrevival.TopBar
-import fr.imacaron.flashplayerrevival.data.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.components.pullrefresh.PullRefreshIndicator
 import fr.imacaron.flashplayerrevival.components.pullrefresh.pullRefresh
 import fr.imacaron.flashplayerrevival.components.pullrefresh.rememberPullRefreshState
+import fr.imacaron.flashplayerrevival.data.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.state.viewmodel.DrawerViewModel
 import fr.imacaron.flashplayerrevival.state.viewmodel.HomeViewModel
 import kotlinx.coroutines.Dispatchers
@@ -101,7 +102,11 @@ fun PendingLine(pending: UserResponse, homeViewModel: HomeViewModel){
 fun FriendLine(friend: UserResponse, homeViewModel: HomeViewModel){
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Surface(Modifier.padding(all = 20.dp), shape = CircleShape, color = MaterialTheme.colorScheme.background) {
-            Image(painterResource(fr.imacaron.flashplayerrevival.R.drawable.logo), null, Modifier.size(56.dp))
+            if(friend.picture){
+                Image(rememberAsyncImagePainter("https://medias.flash-player-revival.net/p/${friend.id}"), null, Modifier.size(56.dp))
+            }else{
+                Image(painterResource(fr.imacaron.flashplayerrevival.R.drawable.logo), null, Modifier.size(56.dp))
+            }
         }
         Text(friend.nickname)
         IconButton({ homeViewModel.delete(friend.id) }){
