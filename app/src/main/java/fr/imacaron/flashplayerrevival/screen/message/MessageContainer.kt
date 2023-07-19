@@ -8,9 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,7 +27,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.imacaron.flashplayerrevival.R
-import fr.imacaron.flashplayerrevival.TopBar
 import fr.imacaron.flashplayerrevival.components.RoundedTextField
 import fr.imacaron.flashplayerrevival.data.dto.out.MessageResponse
 import fr.imacaron.flashplayerrevival.data.dto.out.MessageResponseType
@@ -91,7 +88,7 @@ fun MessageContainer(appViewModel: AppViewModel, drawerViewModel: DrawerViewMode
                 )
             }
         },
-        topBar = { TopBar(messageViewModel.group?.name ?: "") { scope.launch { drawerViewModel.drawerState.open() }} }) {
+        topBar = { TopBar(messageViewModel) { scope.launch { drawerViewModel.drawerState.open() }} }) {
         Surface(
             Modifier.fillMaxSize().padding(it),
             color = MaterialTheme.colorScheme.background
@@ -179,4 +176,39 @@ fun BottomBar(self: UserResponse?, messageViewModel: MessageViewModel, message: 
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TopBar(messageViewModel: MessageViewModel, nav: () -> Unit){
+    TopAppBar(
+        {
+            if(messageViewModel.editingTitle){
+                RoundedTextField(messageViewModel.title, { messageViewModel.title = it })
+            }else {
+                Text(messageViewModel.title)
+            }
+        },
+        navigationIcon = {
+            IconButton(nav){
+                Icon(Icons.Default.Menu, "Nav")
+            }
+        },
+        actions = {
+            if(messageViewModel.editingTitle){
+                IconButton({
+                    messageViewModel.editingTitle = false
+                    messageViewModel.editGroupName()
+                }){
+                    Icon(Icons.Default.Save, "Save name")
+                }
+            }else{
+                IconButton({
+                    messageViewModel.editingTitle = true
+                }) {
+                    Icon(Icons.Default.Edit, "Edit name")
+                }
+            }
+        }
+    )
 }

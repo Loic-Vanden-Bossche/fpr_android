@@ -39,6 +39,10 @@ class MessageViewModel(
 
 	var editMode: Boolean by mutableStateOf(false)
 
+	var title: String by mutableStateOf("")
+
+	var editingTitle: Boolean by mutableStateOf(false)
+
 	var currentGroup: UUID?
 		get() = _currentGroup
 		set(value) {
@@ -49,6 +53,7 @@ class MessageViewModel(
 						group = groupRepository.get(value)
 						messages.clear()
 						messages.addAll(groupRepository.getAllMessage(it, 0, 20))
+						title = group?.name ?: ""
 					}catch (e: NoInternetException){
 						appViewModel.noConnection = true
 					}
@@ -132,6 +137,18 @@ class MessageViewModel(
 			_currentGroup?.let {
 				try {
 					groupRepository.deleteMessage(it, id)
+				}catch (e: NoInternetException){
+					appViewModel.noConnection = true
+				}
+			}
+		}
+	}
+
+	fun editGroupName(){
+		viewModelScope.launch {
+			_currentGroup?.let {
+				try {
+					groupRepository.editGroupName(it, title)
 				}catch (e: NoInternetException){
 					appViewModel.noConnection = true
 				}
