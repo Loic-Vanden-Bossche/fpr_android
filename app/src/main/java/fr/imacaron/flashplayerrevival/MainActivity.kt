@@ -26,12 +26,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import fr.imacaron.flashplayerrevival.api.ApiService
-import fr.imacaron.flashplayerrevival.api.dto.out.ReceivedMessage
+import fr.imacaron.flashplayerrevival.data.dto.out.ReceivedMessage
 import fr.imacaron.flashplayerrevival.data.repository.GroupRepository
 import fr.imacaron.flashplayerrevival.data.repository.UserRepository
-import fr.imacaron.flashplayerrevival.login.LoginRegister
-import fr.imacaron.flashplayerrevival.login.Main
+import fr.imacaron.flashplayerrevival.screen.login.LoginRegister
+import fr.imacaron.flashplayerrevival.screen.Main
 import fr.imacaron.flashplayerrevival.screen.Screen
 import fr.imacaron.flashplayerrevival.screen.splash.Splash
 import fr.imacaron.flashplayerrevival.state.viewmodel.AppViewModel
@@ -48,8 +47,6 @@ class MainActivity : ComponentActivity() {
         val mailKey = stringPreferencesKey("email")
         val passwordKey = stringPreferencesKey("password")
     }
-
-    val api: ApiService = ApiService(this)
 
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {

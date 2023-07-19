@@ -7,10 +7,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import fr.imacaron.flashplayerrevival.api.dto.out.GroupResponse
-import fr.imacaron.flashplayerrevival.api.dto.out.MessageResponse
-import fr.imacaron.flashplayerrevival.api.dto.out.ReceivedMessage
 import fr.imacaron.flashplayerrevival.data.api.WebSocketService
+import fr.imacaron.flashplayerrevival.data.dto.out.GroupResponse
+import fr.imacaron.flashplayerrevival.data.dto.out.MessageResponse
+import fr.imacaron.flashplayerrevival.data.dto.out.ReceivedMessage
 import fr.imacaron.flashplayerrevival.data.repository.GroupRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -23,7 +23,7 @@ import java.util.*
 
 class MessageViewModel(
 	private val groupRepository: GroupRepository,
-	private val mainNavigator: NavHostController,
+	mainNavigator: NavHostController,
 	val messageNotification: (ReceivedMessage) -> Unit
 ) : ViewModel() {
 

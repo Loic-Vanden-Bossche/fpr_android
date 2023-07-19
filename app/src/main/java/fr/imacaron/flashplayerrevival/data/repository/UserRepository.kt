@@ -1,8 +1,8 @@
 package fr.imacaron.flashplayerrevival.data.repository
 
-import fr.imacaron.flashplayerrevival.api.dto.`in`.AddFriend
-import fr.imacaron.flashplayerrevival.api.dto.out.SearchResponse
-import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
+import fr.imacaron.flashplayerrevival.data.dto.`in`.AddFriend
+import fr.imacaron.flashplayerrevival.data.dto.out.SearchResponse
+import fr.imacaron.flashplayerrevival.data.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.data.api.ApiService
 import fr.imacaron.flashplayerrevival.data.api.resources.Friends
 import fr.imacaron.flashplayerrevival.data.api.resources.Profile

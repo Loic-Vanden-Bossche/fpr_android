@@ -15,7 +15,7 @@
             android:theme="@style/Theme.FlashPlayerRevival"
             tools:targetApi="33">
         <activity
-                android:name=".login.LoginActivity"
+                android:name=".screen.login.LoginActivity"
                 android:exported="false"
                 android:theme="@style/Theme.FlashPlayerRevival">
             <intent-filter>

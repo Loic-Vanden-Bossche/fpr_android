@@ -7,7 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import fr.imacaron.flashplayerrevival.api.dto.out.SearchResponse
+import fr.imacaron.flashplayerrevival.data.dto.out.SearchResponse
 import fr.imacaron.flashplayerrevival.data.repository.UserRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

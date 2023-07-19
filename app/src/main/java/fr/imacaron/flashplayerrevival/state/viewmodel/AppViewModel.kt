@@ -10,7 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import fr.imacaron.flashplayerrevival.MainActivity
-import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
+import fr.imacaron.flashplayerrevival.data.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.data.api.ApiService
 import fr.imacaron.flashplayerrevival.data.api.NoInternetException
 import fr.imacaron.flashplayerrevival.data.api.WebSocketService

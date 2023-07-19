@@ -1,9 +1,9 @@
 package fr.imacaron.flashplayerrevival.data.api
 
-import fr.imacaron.flashplayerrevival.api.dto.out.MessageResponse
-import fr.imacaron.flashplayerrevival.api.dto.out.ReceivedMessage
-import fr.imacaron.flashplayerrevival.api.type.STOMPMethod
-import fr.imacaron.flashplayerrevival.api.type.WriteMessage
+import fr.imacaron.flashplayerrevival.data.dto.out.MessageResponse
+import fr.imacaron.flashplayerrevival.data.dto.out.ReceivedMessage
+import fr.imacaron.flashplayerrevival.data.type.STOMPMethod
+import fr.imacaron.flashplayerrevival.data.type.WriteMessage
 import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.http.*

@@ -1,14 +1,14 @@
 package fr.imacaron.flashplayerrevival.data.repository
 
-import fr.imacaron.flashplayerrevival.api.dto.`in`.CreateGroup
-import fr.imacaron.flashplayerrevival.api.dto.`in`.DeleteMessage
-import fr.imacaron.flashplayerrevival.api.dto.`in`.EditMessage
-import fr.imacaron.flashplayerrevival.api.dto.`in`.SendMessage
-import fr.imacaron.flashplayerrevival.api.dto.out.GroupResponse
-import fr.imacaron.flashplayerrevival.api.dto.out.MessageResponse
-import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
-import fr.imacaron.flashplayerrevival.api.type.STOMPMethod
-import fr.imacaron.flashplayerrevival.api.type.WriteMessage
+import fr.imacaron.flashplayerrevival.data.dto.`in`.CreateGroup
+import fr.imacaron.flashplayerrevival.data.dto.`in`.DeleteMessage
+import fr.imacaron.flashplayerrevival.data.dto.`in`.EditMessage
+import fr.imacaron.flashplayerrevival.data.dto.`in`.SendMessage
+import fr.imacaron.flashplayerrevival.data.dto.out.GroupResponse
+import fr.imacaron.flashplayerrevival.data.dto.out.MessageResponse
+import fr.imacaron.flashplayerrevival.data.dto.out.UserResponse
+import fr.imacaron.flashplayerrevival.data.type.STOMPMethod
+import fr.imacaron.flashplayerrevival.data.type.WriteMessage
 import fr.imacaron.flashplayerrevival.data.api.ApiService
 import fr.imacaron.flashplayerrevival.data.api.WebSocketService
 import fr.imacaron.flashplayerrevival.data.api.resources.Groups
