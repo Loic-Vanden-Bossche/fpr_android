@@ -47,7 +47,6 @@ class LoginViewModel(
         loading = true
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                println("$email, $password")
                 val token = authRepository.login(email, password)
                 dataStore.edit { settings ->
                     settings[MainActivity.mailKey] = email

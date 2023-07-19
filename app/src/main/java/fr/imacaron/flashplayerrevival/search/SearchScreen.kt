@@ -57,7 +57,6 @@ fun SearchScreen(searchViewModel: SearchViewModel){
 
 @Composable
 fun UserLine(user: SearchResponse, searchViewModel: SearchViewModel){
-    val scope = rememberCoroutineScope()
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Surface(Modifier.padding(all = 20.dp), shape = CircleShape, color = MaterialTheme.colorScheme.background) {
             Image(painterResource(R.drawable.logo), null, Modifier.size(56.dp))
@@ -67,7 +66,7 @@ fun UserLine(user: SearchResponse, searchViewModel: SearchViewModel){
             "APPROVED" -> Icon(Icons.Default.Done, null)
             "REJECTED" -> Icon(Icons.Default.Close, null)
             "PENDING" -> Icon(Icons.Default.HourglassEmpty, null)
-            else -> IconButton({ scope.launch { searchViewModel.addFriend(user.id) } }){
+            else -> IconButton({ searchViewModel.addFriend(user.id); searchViewModel.search() }){
                 Icon(Icons.Default.PersonAdd, null)
             }
         }

@@ -25,15 +25,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import fr.imacaron.flashplayerrevival.R
-import fr.imacaron.flashplayerrevival.api.dto.out.GroupResponse
-import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.components.RoundedTextField
 import fr.imacaron.flashplayerrevival.components.pullrefresh.PullRefreshIndicator
 import fr.imacaron.flashplayerrevival.components.pullrefresh.pullRefresh
 import fr.imacaron.flashplayerrevival.components.pullrefresh.rememberPullRefreshState
 import fr.imacaron.flashplayerrevival.state.viewmodel.AppViewModel
 import fr.imacaron.flashplayerrevival.state.viewmodel.DrawerViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -41,31 +38,23 @@ import java.util.*
 fun NavDrawerSheet(drawerViewModel: DrawerViewModel, appViewModel: AppViewModel){
     var search by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
-    val groups: MutableList<GroupResponse> = remember { mutableStateListOf() }
-    val friends: MutableList<UserResponse> = remember { mutableStateListOf() }
-    var displayModal: Boolean by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
-    var refreshing by remember { mutableStateOf(false) }
-    val pullState = rememberPullRefreshState(refreshing, {
-        scope.launch(Dispatchers.IO) {
-            refreshing = true
-            groups.clear()
-            groups.addAll(drawerViewModel.getAllGroup())
-            refreshing = false
-        }
+    val pullState = rememberPullRefreshState(drawerViewModel.refreshing, {
+        drawerViewModel.refreshing = true
+        drawerViewModel.getAllGroup()
+        drawerViewModel.getAllFriend()
+        drawerViewModel.refreshing = false
     })
     LaunchedEffect(drawerViewModel.reload){
-        groups.clear()
-        groups.addAll(drawerViewModel.getAllGroup())
-        friends.clear()
-        friends.addAll(drawerViewModel.getAllFriend())
+        drawerViewModel.getAllGroup()
+        drawerViewModel.getAllFriend()
     }
     ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.primary, drawerShape = RectangleShape) {
         RoundedTextField(search, { search = it }, Modifier.padding(8.dp).fillMaxWidth(), label = { Text(stringResource(R.string.search_contact)) })
         Box(Modifier.weight(1f).pullRefresh(pullState)){
             LazyColumn(Modifier.fillMaxSize(), listState, flingBehavior = ScrollableDefaults.flingBehavior()) {
-                if(!refreshing){
-                    items(groups.filter { if(search.isBlank()) true else search in it.name.lowercase() }){
+                if(!drawerViewModel.refreshing){
+                    items(drawerViewModel.groups.filter { if(search.isBlank()) true else search in it.name.lowercase() }){
                         if(drawerViewModel.selected == it.id){
                             SelectedLine(it.name)
                         }else{
@@ -81,19 +70,19 @@ fun NavDrawerSheet(drawerViewModel: DrawerViewModel, appViewModel: AppViewModel)
                 }
             }
             PullRefreshIndicator(
-                refreshing,
+                drawerViewModel.refreshing,
                 pullState,
                 Modifier.align(alignment = Alignment.TopCenter)
             )
         }
-        if(displayModal){
-            CreateGroupModal({ displayModal = false }, { groups.add(0, it) }, appViewModel.self, friends)
+        if(drawerViewModel.displayModal){
+            CreateGroupModal({ drawerViewModel.displayModal = false }, { drawerViewModel.groups.add(0, it) }, appViewModel.self, drawerViewModel.friends)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
             IconButton( { scope.launch { drawerViewModel.navigateHome() } } ){
                 Icon(Icons.Default.Home, "Home")
             }
-            IconButton( { displayModal = true } ){
+            IconButton( { drawerViewModel.displayModal = true } ){
                 Icon(Icons.Default.GroupAdd, "Create group")
             }
             IconButton({ scope.launch { drawerViewModel.navigateSearch() } }){

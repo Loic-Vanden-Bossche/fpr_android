@@ -84,7 +84,7 @@ class MainActivity : ComponentActivity() {
                         Splash()
                     }
                     composable(Screen.AppScreen.route){
-                        Main(drawerViewModel, appViewModel)
+                        Main(drawerViewModel, appViewModel, this@MainActivity::messageNotification)
                     }
                     composable(Screen.LoginRegisterScreen.route){
                         LoginRegister(appNavigator, dataStore) {

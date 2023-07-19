@@ -11,7 +11,7 @@ import java.util.*
 
 class UserRepository {
 
-    suspend fun self(): UserResponse = ApiService.get<Profile, UserResponse>(Profile()).apply { println("New self") }
+    suspend fun self(): UserResponse = ApiService.get<Profile, UserResponse>(Profile())
 
     suspend fun search(search: String): List<SearchResponse> = ApiService.get(Users.Search(search = search))
 
@@ -24,4 +24,6 @@ class UserRepository {
     suspend fun approveFriend(id: UUID): Unit = ApiService.patch(Friends.Approve(id = id), Unit)
 
     suspend fun denyFriend(id: UUID): Unit = ApiService.patch(Friends.Deny(id = id), Unit)
+
+    suspend fun deleteFriend(id: UUID): Unit = ApiService.delete(Friends.Id(id = id))
 }
