@@ -40,7 +40,7 @@ fun SignInCard(viewModel: LoginViewModel){
 				viewModel.email,
 				{ viewModel.email = it },
 				Modifier.fillMaxWidth(),
-				{ Text(stringResource(R.string.mail)) },
+				label = { Text(stringResource(R.string.mail)) },
 				isError = viewModel.error,
 				keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
 				singleLine = true
@@ -49,7 +49,7 @@ fun SignInCard(viewModel: LoginViewModel){
 				viewModel.pseudo,
 				{ viewModel.pseudo = it },
 				Modifier.fillMaxWidth(),
-				{ Text(stringResource(R.string.pseudo))},
+				label = { Text(stringResource(R.string.pseudo))},
 				isError = viewModel.error,
 				keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
 				singleLine = true

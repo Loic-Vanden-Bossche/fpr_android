@@ -28,8 +28,8 @@ fun PasswordField(
 		value,
 		onValueChange,
 		modifier,
-		label,
-		{
+		label = label,
+		trailingIcon = {
 			IconButton({
 				show = !show
 			}){ Icon(if(show) Icons.Default.VisibilityOff else Icons.Default.Visibility, "Show Password") }

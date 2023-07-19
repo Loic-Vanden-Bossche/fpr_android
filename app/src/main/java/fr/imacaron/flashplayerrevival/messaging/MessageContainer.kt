@@ -12,11 +12,13 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -26,121 +28,104 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import fr.imacaron.flashplayerrevival.MainActivity
 import fr.imacaron.flashplayerrevival.R
 import fr.imacaron.flashplayerrevival.TopBar
-import fr.imacaron.flashplayerrevival.api.ApiService
 import fr.imacaron.flashplayerrevival.api.dto.out.MessageResponse
 import fr.imacaron.flashplayerrevival.api.dto.out.MessageResponseType
 import fr.imacaron.flashplayerrevival.api.dto.out.UserMessageResponse
 import fr.imacaron.flashplayerrevival.api.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.components.RoundedTextField
+import fr.imacaron.flashplayerrevival.state.viewmodel.AppViewModel
+import fr.imacaron.flashplayerrevival.state.viewmodel.DrawerViewModel
+import fr.imacaron.flashplayerrevival.state.viewmodel.MessageViewModel
 import fr.imacaron.flashplayerrevival.utils.frenchDateFormater
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.*
 
 @Composable
-fun MessageContainer(groupId: UUID, self: UserResponse?, drawerState: DrawerState){
-    val mainActivity = LocalContext.current as MainActivity
-    val messages: MutableList<MessageResponse> = remember { mutableStateListOf() }
-    var init by remember { mutableStateOf(false) }
-    val newMessage by mainActivity.api.messageFlow.collectAsStateWithLifecycle(null)
-    var input by remember { mutableStateOf("") }
-    var group: ApiService.GroupsRoute.Group? by remember { mutableStateOf(null) }
+fun MessageContainer(appViewModel: AppViewModel, drawerViewModel: DrawerViewModel, messageViewModel: MessageViewModel){
+    val newMessage by messageViewModel.messageFlow.collectAsStateWithLifecycle(null)
     val scope = rememberCoroutineScope()
     val messageState = rememberLazyListState()
-    var longPress: MessageResponse? by remember { mutableStateOf(null) }
-    var editMode: UUID? by remember { mutableStateOf(null) }
     LaunchedEffect(messageState.canScrollForward){
-        if(!messageState.canScrollForward && messages.size >= 20){
-            group?.messages(messages.size / 20, 20)?.forEach {
-                messages.add(it)
-            }
+        if(!messageState.canScrollForward && messageViewModel.messages.size >= 20){
+            messageViewModel.getMessages(messageViewModel.messages.size / 20, 20)
         }
     }
     LaunchedEffect(newMessage){
         newMessage?.let { nMessage ->
-            if(nMessage.group == groupId){
+            if(nMessage.group == messageViewModel.currentGroup){
                 when (nMessage.type) {
                     MessageResponseType.EDIT -> {
-                        messages.indexOfFirst { it.id == nMessage.id }.let { index ->
+                        messageViewModel.messages.indexOfFirst { it.id == nMessage.id }.let { index ->
                             if(index != -1){
-                                messages[index] = nMessage.toMessageResponse()
+                                messageViewModel.messages[index] = nMessage.toMessageResponse()
                             }
                         }
                     }
                     MessageResponseType.NEW -> {
-                        messages.add(0, nMessage.toMessageResponse())
+                        messageViewModel.messages.add(0, nMessage.toMessageResponse())
                     }
                     MessageResponseType.DELETE -> {
-                        messages.removeAll { it.id == nMessage.id }
+                        messageViewModel.messages.removeAll { it.id == nMessage.id }
                     }
                 }
             }else {
-                mainActivity.messageNotification(nMessage)
-            }
-        }
-    }
-    LaunchedEffect(mainActivity, groupId){
-        if(!init) {
-            mainActivity.api.groups(groupId).apply {
-                messages.addAll(messages(0, 20).map { it })
-                init = true
-                group = this
+                messageViewModel.messageNotification(nMessage)
             }
         }
     }
     Scaffold(
         bottomBar = {
-            if(longPress != null) {
+            if(messageViewModel.messageEdit != null) {
                 BottomBar(
-                    self,
-                    group,
-                    longPress!!,
-                    { longPress = null },
+                    appViewModel.self,
+                    messageViewModel,
+                    messageViewModel.messageEdit!!,
+                    { messageViewModel.messageEdit = null },
                     {
-                        editMode = it.id
-                        input = it.message
+                        messageViewModel.editMode = true
+                        messageViewModel.input = it.message
                     }
                 )
             }
         },
-        topBar = { TopBar(group?.name ?: "") { scope.launch { drawerState.open() }} }) {
+        topBar = { TopBar(messageViewModel.group?.name ?: "") { scope.launch { drawerViewModel.drawerState.open() }} }) {
         Surface(
             Modifier.fillMaxSize().padding(it),
             color = MaterialTheme.colorScheme.background
         ) {
             Column(Modifier.fillMaxHeight()) {
                 LazyColumn(Modifier.weight(1f), messageState, reverseLayout = true) {
-                    items(messages){message ->
-                        Message(message.message, message.createdAt, message.user, message.user.id == self?.id){
-                            longPress = message
+                    items(messageViewModel.messages){message ->
+                        Message(message.message, message.createdAt, message.user, message.user.id == appViewModel.self?.id){
+                            messageViewModel.messageEdit = message
                         }
                     }
                 }
                 Row(Modifier.padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     RoundedTextField(
-                        input,
-                        { input = it },
+                        messageViewModel.input,
+                        { messageViewModel.input = it },
                         Modifier.weight(1f),
+                        enabled = messageViewModel.messageEdit == null || messageViewModel.editMode,
                         label = { Text(stringResource(R.string.write_message)) },
                         keyboardOptions = KeyboardOptions(KeyboardCapitalization.Sentences, true, KeyboardType.Text, ImeAction.Default),
                         maxLines = 3
                     )
-                    ElevatedButton( {
-                        scope.launch(Dispatchers.IO){
-                            if(editMode == null){
-                                group?.send(input)
-                                input = ""
+                    ElevatedButton({
+                        scope.launch(Dispatchers.IO) {
+                            if (messageViewModel.editMode) {
+                                messageViewModel.editMessage(messageViewModel.messageEdit!!.id)
+                                messageViewModel.messageEdit = null
                             } else {
-                                group?.editMessage(input, editMode!!)
-                                input = ""
-                                editMode = null
-                                longPress = null
+                                messageViewModel.sendMessage()
                             }
                         }
-                    }){
+                    },
+                        enabled = messageViewModel.messageEdit == null || messageViewModel.editMode
+                    ){
                         Text(stringResource(R.string.send))
                     }
                 }
@@ -161,7 +146,7 @@ fun Message(text: String, date: Date, user: UserMessageResponse, self: Boolean, 
     Row(Modifier.fillMaxWidth().padding(4.dp), horizontalArrangement = arrangement.first) {
         Column(Modifier.padding(horizontal = 8.dp), horizontalAlignment = arrangement.third) {
             Text(user.nickname)
-            ElevatedCard(Modifier.padding(top = 8.dp).combinedClickable(onClick = {  }, onLongClick = {haptic.performHapticFeedback(HapticFeedbackType.LongPress); onLongPress()})) {
+            ElevatedCard(Modifier.padding(top = 8.dp).combinedClickable(onClick = {  }, onLongClick = {haptic.performHapticFeedback(HapticFeedbackType.LongPress); if(self) onLongPress()})) {
                 Column(Modifier.padding(8.dp).width(IntrinsicSize.Min)) {
                     Text(frenchDateFormater.format(date), Modifier.fillMaxWidth(), overflow = TextOverflow.Visible)
                     Text(text, Modifier.fillMaxWidth(), textAlign = arrangement.second)
@@ -172,7 +157,7 @@ fun Message(text: String, date: Date, user: UserMessageResponse, self: Boolean, 
 }
 
 @Composable
-fun BottomBar(self: UserResponse?, group: ApiService.GroupsRoute.Group?, message: MessageResponse, close: () -> Unit, onEdit: (MessageResponse) -> Unit){
+fun BottomBar(self: UserResponse?, messageViewModel: MessageViewModel, message: MessageResponse, close: () -> Unit, onEdit: (MessageResponse) -> Unit){
     val scope = rememberCoroutineScope()
     BottomAppBar {
         IconButton(close){
@@ -186,7 +171,8 @@ fun BottomBar(self: UserResponse?, group: ApiService.GroupsRoute.Group?, message
                 Icon(Icons.Default.Edit, null)
             }
             IconButton({
-                scope.launch { group?.deleteMessage(message.id) }
+
+                scope.launch { messageViewModel.deleteMessage(message.id) }
                 close()
             }){
                 Icon(Icons.Default.Delete, null)

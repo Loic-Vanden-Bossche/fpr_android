@@ -44,7 +44,7 @@ fun SearchScreen(searchViewModel: SearchViewModel){
             color = MaterialTheme.colorScheme.background
         ) {
             Column {
-                RoundedTextField(searchViewModel.search, { searchViewModel.search = it }, Modifier.padding(8.dp).fillMaxWidth(), { Text(stringResource(R.string.search_user)) })
+                RoundedTextField(searchViewModel.search, { searchViewModel.search = it }, Modifier.padding(8.dp).fillMaxWidth(), label = { Text(stringResource(R.string.search_user)) })
                 LazyColumn {
                     items(searchViewModel.users) {
                         UserLine(it, searchViewModel)

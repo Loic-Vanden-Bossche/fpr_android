@@ -21,7 +21,6 @@ import fr.imacaron.flashplayerrevival.components.PaleText
 import fr.imacaron.flashplayerrevival.components.PasswordField
 import fr.imacaron.flashplayerrevival.components.TextField
 import fr.imacaron.flashplayerrevival.state.viewmodel.LoginViewModel
-import kotlinx.coroutines.DelicateCoroutinesApi
 
 @Composable
 fun LoginCard(viewModel: LoginViewModel) {
@@ -39,7 +38,7 @@ fun LoginCard(viewModel: LoginViewModel) {
 				viewModel.email,
 				{ viewModel.email = it },
 				Modifier.fillMaxWidth(),
-				{ Text(stringResource(R.string.mail)) },
+				label = { Text(stringResource(R.string.mail)) },
 				isError = viewModel.error,
 				keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
 				singleLine = true

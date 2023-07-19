@@ -24,7 +24,7 @@ class GroupRepository {
 
     suspend fun create(users: List<UserResponse>): GroupResponse = ApiService.post(Groups(), CreateGroup(users.joinToString(", ") { it.nickname }, users.map { it.id }))
 
-    suspend fun getAllMessage(group: UUID, page: Int, size: Int): List<MessageResponse> = ApiService.get(Groups.Id.Messages(Groups.Id(id = group)))
+    suspend fun getAllMessage(group: UUID, page: Int, size: Int): List<MessageResponse> = ApiService.get(Groups.Id.Messages(Groups.Id(id = group), page, size))
 
     suspend fun sendMessageToGroup(group: UUID, text: String) {
         val data = Json.encodeToString<SendMessage>(SendMessage(text))
