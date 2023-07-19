@@ -8,9 +8,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
+import fr.imacaron.flashplayerrevival.data.api.NoInternetException
+import fr.imacaron.flashplayerrevival.data.api.WebSocketService
 import fr.imacaron.flashplayerrevival.data.dto.out.GroupResponse
 import fr.imacaron.flashplayerrevival.data.dto.out.UserResponse
-import fr.imacaron.flashplayerrevival.data.api.WebSocketService
 import fr.imacaron.flashplayerrevival.data.repository.GroupRepository
 import fr.imacaron.flashplayerrevival.data.repository.UserRepository
 import fr.imacaron.flashplayerrevival.screen.Screen
@@ -23,6 +24,7 @@ class DrawerViewModel(
 	private val groupRepository: GroupRepository,
 	private val userRepository: UserRepository,
 	val drawerState: DrawerState,
+	private val appViewModel: AppViewModel
 ) : ViewModel() {
 	var selected: String by mutableStateOf("")
 
@@ -56,16 +58,24 @@ class DrawerViewModel(
 	fun getAllGroup() {
 		viewModelScope.launch(Dispatchers.IO) {
 			groups.clear()
-			groups.addAll(groupRepository.getAll().onEach {
-				WebSocketService.subscribeTo(UUID.fromString(it.id))
-			})
+			try {
+				groups.addAll(groupRepository.getAll().onEach {
+					WebSocketService.subscribeTo(UUID.fromString(it.id))
+				})
+			}catch (e: NoInternetException){
+				appViewModel.noConnection = true
+			}
 		}
 	}
 
 	fun getAllFriend() {
 		viewModelScope.launch(Dispatchers.IO){
 			friends.clear()
-			friends.addAll(userRepository.getAllFriends())
+			try{
+				friends.addAll(userRepository.getAllFriends())
+			}catch (e: NoInternetException){
+				appViewModel.noConnection = true
+			}
 		}
 	}
 

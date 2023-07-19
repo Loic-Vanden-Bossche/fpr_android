@@ -1,5 +1,8 @@
 package fr.imacaron.flashplayerrevival.data.api
 
+import fr.imacaron.flashplayerrevival.data.error.ConflictingUser
+import fr.imacaron.flashplayerrevival.data.error.InvalidField
+import fr.imacaron.flashplayerrevival.data.error.LoginError
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
@@ -43,8 +46,10 @@ internal object ApiService{
             handleResponseExceptionWithRequest { exception, _ ->
                 val clientException = exception as? ClientRequestException ?: return@handleResponseExceptionWithRequest
                 val exceptionResponse = clientException.response
-                when (exceptionResponse.status) {
-
+                when(exceptionResponse.status){
+                    HttpStatusCode.Unauthorized -> throw LoginError()
+                    HttpStatusCode.BadRequest -> throw InvalidField()
+                    HttpStatusCode.Conflict -> throw ConflictingUser()
                 }
             }
         }

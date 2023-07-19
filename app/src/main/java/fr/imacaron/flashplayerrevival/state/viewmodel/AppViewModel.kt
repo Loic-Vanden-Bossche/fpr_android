@@ -10,10 +10,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import fr.imacaron.flashplayerrevival.MainActivity
-import fr.imacaron.flashplayerrevival.data.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.data.api.ApiService
 import fr.imacaron.flashplayerrevival.data.api.NoInternetException
 import fr.imacaron.flashplayerrevival.data.api.WebSocketService
+import fr.imacaron.flashplayerrevival.data.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.data.repository.UserRepository
 import fr.imacaron.flashplayerrevival.screen.Screen
 import kotlinx.coroutines.Dispatchers
@@ -23,9 +23,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AppViewModel(
-    private val dataStore: DataStore<Preferences>,
+    val dataStore: DataStore<Preferences>,
     private val userRepository: UserRepository,
-    private val appNavigator: NavHostController,
+    val appNavigator: NavHostController,
     private val makeToast: (String) -> Unit
 ): ViewModel() {
     init {
@@ -51,6 +51,7 @@ class AppViewModel(
                     withContext(Dispatchers.Main) {
                         appNavigator.navigate(Screen.AppScreen.route)
                         appNavigator.clearBackStack(Screen.SplashScreen.route)
+                        noConnection = true
                     }
                 }else {
                     dataStore.edit { it.remove(MainActivity.tokenKey) }
@@ -63,7 +64,7 @@ class AppViewModel(
         }
     }
 
-    var reload: Boolean by mutableStateOf(false)
+    var noConnection: Boolean by mutableStateOf(false)
 
     fun disconnect() {
         viewModelScope.launch(Dispatchers.IO) {

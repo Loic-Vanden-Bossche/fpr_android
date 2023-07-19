@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
+import fr.imacaron.flashplayerrevival.data.api.NoInternetException
 import fr.imacaron.flashplayerrevival.data.api.WebSocketService
 import fr.imacaron.flashplayerrevival.data.dto.out.GroupResponse
 import fr.imacaron.flashplayerrevival.data.dto.out.MessageResponse
@@ -24,7 +25,8 @@ import java.util.*
 class MessageViewModel(
 	private val groupRepository: GroupRepository,
 	mainNavigator: NavHostController,
-	val messageNotification: (ReceivedMessage) -> Unit
+	val messageNotification: (ReceivedMessage) -> Unit,
+	private val appViewModel: AppViewModel
 ) : ViewModel() {
 
 	private var notificationListener: Job? = null
@@ -43,10 +45,13 @@ class MessageViewModel(
 			_currentGroup = value
 			viewModelScope.launch(Dispatchers.IO){
 				value?.let {
-					group = groupRepository.get(value)
-					messages.clear()
-					messages.addAll(groupRepository.getAllMessage(it, 0, 20
-					))
+					try{
+						group = groupRepository.get(value)
+						messages.clear()
+						messages.addAll(groupRepository.getAllMessage(it, 0, 20))
+					}catch (e: NoInternetException){
+						appViewModel.noConnection = true
+					}
 				}
 			}
 		}
@@ -87,7 +92,11 @@ class MessageViewModel(
 	fun getMessages(page: Int, size: Int){
 		currentGroup?.let {
 			viewModelScope.launch(Dispatchers.IO){
-				messages.addAll(groupRepository.getAllMessage(it, page, size))
+				try {
+					messages.addAll(groupRepository.getAllMessage(it, page, size))
+				}catch (e: NoInternetException){
+					appViewModel.noConnection = true
+				}
 			}
 		}
 	}
@@ -95,8 +104,12 @@ class MessageViewModel(
 	fun sendMessage(){
 		viewModelScope.launch(Dispatchers.IO){
 			_currentGroup?.let {
-				groupRepository.sendMessageToGroup(it, input)
-				input = ""
+				try {
+					groupRepository.sendMessageToGroup(it, input)
+					input = ""
+				}catch (e: NoInternetException){
+					appViewModel.noConnection = true
+				}
 			}
 		}
 	}
@@ -104,8 +117,12 @@ class MessageViewModel(
 	fun editMessage(id: UUID){
 		viewModelScope.launch(Dispatchers.IO){
 			_currentGroup?.let {
-				groupRepository.editMessageInGroup(it, input, id)
-				input = ""
+				try {
+					groupRepository.editMessageInGroup(it, input, id)
+					input = ""
+				}catch (e: NoInternetException){
+					appViewModel.noConnection = true
+				}
 			}
 		}
 	}
@@ -113,7 +130,11 @@ class MessageViewModel(
 	fun deleteMessage(id: UUID){
 		viewModelScope.launch(Dispatchers.IO){
 			_currentGroup?.let {
-				groupRepository.deleteMessage(it, id)
+				try {
+					groupRepository.deleteMessage(it, id)
+				}catch (e: NoInternetException){
+					appViewModel.noConnection = true
+				}
 			}
 		}
 	}

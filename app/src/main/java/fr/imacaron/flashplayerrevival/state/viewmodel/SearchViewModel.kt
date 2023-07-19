@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import fr.imacaron.flashplayerrevival.data.api.NoInternetException
 import fr.imacaron.flashplayerrevival.data.dto.out.SearchResponse
 import fr.imacaron.flashplayerrevival.data.repository.UserRepository
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +16,8 @@ import java.util.*
 
 class SearchViewModel(
     private val userRepository: UserRepository,
-    val drawerState: DrawerState
+    val drawerState: DrawerState,
+    private val appViewModel: AppViewModel
 ): ViewModel() {
     var search by mutableStateOf("")
 
@@ -25,14 +27,22 @@ class SearchViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             users.clear()
             if (search != "") {
-                users.addAll(userRepository.search(search))
+                try {
+                    users.addAll(userRepository.search(search))
+                }catch (e: NoInternetException){
+                    appViewModel.noConnection = true
+                }
             }
         }
     }
 
     fun addFriend(id: UUID){
         viewModelScope.launch(Dispatchers.IO){
-            userRepository.addFriend(id)
+            try {
+                userRepository.addFriend(id)
+            }catch (e: NoInternetException){
+                appViewModel.noConnection = true
+            }
         }
     }
 }

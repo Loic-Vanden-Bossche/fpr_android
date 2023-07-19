@@ -10,13 +10,21 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.SignalCellularConnectedNoInternet0Bar
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.style.TextAlign
 import androidx.core.os.bundleOf
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -29,12 +37,11 @@ import androidx.navigation.compose.rememberNavController
 import fr.imacaron.flashplayerrevival.data.dto.out.ReceivedMessage
 import fr.imacaron.flashplayerrevival.data.repository.GroupRepository
 import fr.imacaron.flashplayerrevival.data.repository.UserRepository
-import fr.imacaron.flashplayerrevival.screen.login.LoginRegister
 import fr.imacaron.flashplayerrevival.screen.Main
 import fr.imacaron.flashplayerrevival.screen.Screen
+import fr.imacaron.flashplayerrevival.screen.login.LoginRegister
 import fr.imacaron.flashplayerrevival.screen.splash.Splash
-import fr.imacaron.flashplayerrevival.state.viewmodel.AppViewModel
-import fr.imacaron.flashplayerrevival.state.viewmodel.DrawerViewModel
+import fr.imacaron.flashplayerrevival.state.viewmodel.*
 import fr.imacaron.flashplayerrevival.ui.theme.FlashPlayerRevivalTheme
 
 const val CHANNEL_ID = "a4c16ebd-8f12-4f43-8b87-6ad7d47a8f03"
@@ -60,6 +67,7 @@ class MainActivity : ComponentActivity() {
             }
             val appNavigator = rememberNavController()
             val mainNavigator = rememberNavController()
+            val loginNav = rememberNavController()
             LaunchedEffect(Unit){
                 intent.extras?.let {
                     it.getString("group")?.let { data ->
@@ -73,42 +81,45 @@ class MainActivity : ComponentActivity() {
                 }
             }
             val drawerViewModel: DrawerViewModel = viewModel {
-                DrawerViewModel(mainNavigator, GroupRepository(), UserRepository(), drawerState)
+                DrawerViewModel(mainNavigator, GroupRepository(), UserRepository(), drawerState, appViewModel)
+            }
+            val loginViewModel = viewModel {
+                LoginViewModel(loginNavigator = loginNav, appNavigator = appViewModel.appNavigator, dataStore = appViewModel.dataStore, makeToast = { Toast.makeText(this@MainActivity, it, Toast.LENGTH_LONG).show() }, appViewModel = appViewModel)
+            }
+            val searchViewModel: SearchViewModel = viewModel {
+                SearchViewModel(UserRepository(), drawerViewModel.drawerState ,appViewModel)
+            }
+            val messageViewModel: MessageViewModel = viewModel {
+                MessageViewModel(GroupRepository(),  drawerViewModel.mainNavigator, this@MainActivity::messageNotification, appViewModel)
+            }
+            val homeViewModel: HomeViewModel = viewModel {
+                HomeViewModel(UserRepository(), appViewModel)
             }
             FlashPlayerRevivalTheme {
-                NavHost(appNavigator, "splash") {
-                    composable(Screen.SplashScreen.route){
-                        Splash()
+                Box{
+                    NavHost(appNavigator, Screen.SplashScreen.route) {
+                        composable(Screen.SplashScreen.route){
+                            Splash()
+                        }
+                        composable(Screen.AppScreen.route){
+                            Main(drawerViewModel, appViewModel, homeViewModel, messageViewModel, searchViewModel)
+                        }
+                        composable(Screen.LoginRegisterScreen.route){
+                            LoginRegister(loginViewModel)
+                        }
                     }
-                    composable(Screen.AppScreen.route){
-                        Main(drawerViewModel, appViewModel, this@MainActivity::messageNotification)
-                    }
-                    composable(Screen.LoginRegisterScreen.route){
-                        LoginRegister(appNavigator, dataStore) {
-                            Toast.makeText(this@MainActivity, it, Toast.LENGTH_LONG).show()
+                    if(appViewModel.noConnection){
+                        Surface(color = MaterialTheme.colorScheme.surface) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.SignalCellularConnectedNoInternet0Bar, "No internet")
+                                Text("No internet", textAlign = TextAlign.Center)
+                            }
                         }
                     }
                 }
             }
         }
     }
-
-//    private suspend fun resume(){
-//        token()?.let {
-//            api.token = it
-//            api.initSocket()
-//        } ?: run {
-//            startActivity(Intent(this, LoginActivity::class.java))
-//        }
-//    }
-
-//    fun disconnect(){
-//        runBlocking {
-//            dataStore.edit { it.clear() }
-//        }
-//        finish()
-//        startActivity(Intent(this, LoginActivity::class.java))
-//    }
 
     private fun createNotificationChannel(){
         val name = getString(R.string.channel_name)

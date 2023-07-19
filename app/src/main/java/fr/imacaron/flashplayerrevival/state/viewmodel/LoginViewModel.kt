@@ -11,6 +11,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import fr.imacaron.flashplayerrevival.MainActivity
 import fr.imacaron.flashplayerrevival.R
+import fr.imacaron.flashplayerrevival.data.api.NoInternetException
+import fr.imacaron.flashplayerrevival.data.error.InvalidField
+import fr.imacaron.flashplayerrevival.data.error.LoginError
 import fr.imacaron.flashplayerrevival.data.repository.AuthRepository
 import fr.imacaron.flashplayerrevival.screen.Screen
 import kotlinx.coroutines.Dispatchers
@@ -21,10 +24,11 @@ import kotlinx.coroutines.withContext
 
 class LoginViewModel(
     private val authRepository: AuthRepository = AuthRepository(),
-    private val loginNavigator: NavHostController,
+    val loginNavigator: NavHostController,
     private val appNavigator: NavHostController,
     private val dataStore: DataStore<Preferences>,
-    private val makeToast: (resId: Int) -> Unit
+    private val makeToast: (resId: Int) -> Unit,
+    private val appViewModel: AppViewModel
 ): ViewModel() {
 
     var email: String by mutableStateOf("")
@@ -33,7 +37,7 @@ class LoginViewModel(
     var error: Boolean by mutableStateOf(false)
     var loading: Boolean by mutableStateOf(false)
 
-    init {
+    fun init() {
         viewModelScope.launch(Dispatchers.IO){
             val email = dataStore.data.map { it[MainActivity.mailKey] }.first()?.also { email = it }
             val password = dataStore.data.map { it[MainActivity.passwordKey] }.first()?.also { password = it }
@@ -53,15 +57,20 @@ class LoginViewModel(
                     settings[MainActivity.passwordKey] = password
                     settings[MainActivity.tokenKey] = token.token
                 }
-                withContext(Dispatchers.IO){
+                withContext(Dispatchers.Main){
                     appNavigator.navigate(Screen.AppScreen.route)
                 }
-            }catch (e : Exception){
-                e.printStackTrace()
+            } catch (e: NoInternetException){
+                appViewModel.noConnection = true
+            }catch (_: LoginError){
                 withContext(Dispatchers.Main){
-                    makeToast(R.string.new_message)
+                    makeToast(R.string.login_error)
                 }
-                //TODO Error management
+                error = true
+            }catch (_: InvalidField){
+                withContext(Dispatchers.Main){
+                    makeToast(R.string.invalid_field)
+                }
                 error = true
             }finally {
                 loading = false
@@ -80,6 +89,8 @@ class LoginViewModel(
                     settings[MainActivity.tokenKey] = token.token
                 }
                 appNavigator.navigate(Screen.AppScreen.route)
+            }catch (e: NoInternetException){
+                appViewModel.noConnection = true
             }catch (e: Exception){
                 e.printStackTrace()
                 withContext(Dispatchers.Main){

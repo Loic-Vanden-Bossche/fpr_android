@@ -7,7 +7,6 @@ import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -23,8 +22,6 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
 import fr.imacaron.flashplayerrevival.MainActivity
 import fr.imacaron.flashplayerrevival.R
 import fr.imacaron.flashplayerrevival.data.api.resources.Auth
@@ -34,8 +31,6 @@ import fr.imacaron.flashplayerrevival.data.dto.out.LoginResponse
 import fr.imacaron.flashplayerrevival.data.error.ConflictingUser
 import fr.imacaron.flashplayerrevival.data.error.InvalidField
 import fr.imacaron.flashplayerrevival.data.error.LoginError
-import fr.imacaron.flashplayerrevival.ui.theme.FlashPlayerRevivalTheme
-import fr.imacaron.flashplayerrevival.utils.keyboardAsState
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
@@ -98,26 +93,6 @@ class LoginActivity : ComponentActivity() {
 		}
 		requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 		WindowCompat.setDecorFitsSystemWindows(window, false)
-		setContent {
-			val loginNav = rememberNavController()
-			val open by keyboardAsState()
-			val (cardPlacement, pt) = if (open) {
-				Arrangement.Top to 64.dp
-			} else {
-				Arrangement.Center to 0.dp
-			}
-			FlashPlayerRevivalTheme {
-				Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-					Column(Modifier.padding(top = pt).height(10.dp), verticalArrangement = cardPlacement) {
-						Logo()
-						NavHost(loginNav, "login"){
-//							composable("login") { LoginCard(loginViewModel) { loginNav.navigate("signin") } }
-//							composable("signin") { SignInCard { loginNav.navigate("login") } }
-						}
-					}
-				}
-			}
-		}
 	}
 
 	suspend fun connect(mail: String, password: String): Boolean {
