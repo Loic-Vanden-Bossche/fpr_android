@@ -15,5 +15,10 @@ sealed class Screen(val route: String) {
 
     object SearchScreen: Screen("search")
 
-    class MessageScreen(id: UUID): Screen("message/$id")
+    class MessageScreen(id: UUID): Screen("message/$id"){
+        companion object {
+            const val paramName: String = "id"
+            const val navRoute: String = "message/{$paramName}"
+        }
+    }
 }

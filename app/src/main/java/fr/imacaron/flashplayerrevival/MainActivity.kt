@@ -21,30 +21,35 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
 import androidx.core.os.bundleOf
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import fr.imacaron.flashplayerrevival.data.dto.out.ReceivedMessage
-import fr.imacaron.flashplayerrevival.data.repository.GroupRepository
 import fr.imacaron.flashplayerrevival.data.repository.UserRepository
 import fr.imacaron.flashplayerrevival.screen.Main
 import fr.imacaron.flashplayerrevival.screen.Screen
 import fr.imacaron.flashplayerrevival.screen.login.LoginRegister
 import fr.imacaron.flashplayerrevival.screen.splash.Splash
-import fr.imacaron.flashplayerrevival.state.viewmodel.*
+import fr.imacaron.flashplayerrevival.state.viewmodel.AppViewModel
+import fr.imacaron.flashplayerrevival.state.viewmodel.HomeViewModel
+import fr.imacaron.flashplayerrevival.state.viewmodel.LoginViewModel
 import fr.imacaron.flashplayerrevival.ui.theme.FlashPlayerRevivalTheme
 
 const val CHANNEL_ID = "a4c16ebd-8f12-4f43-8b87-6ad7d47a8f03"
+
+class Test: ViewModelStoreOwner {
+    override val viewModelStore: ViewModelStore = ViewModelStore()
+}
 
 class MainActivity : ComponentActivity() {
 
@@ -55,16 +60,10 @@ class MainActivity : ComponentActivity() {
         val passwordKey = stringPreferencesKey("password")
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         createNotificationChannel()
         setContent {
-            val keyboardController = LocalSoftwareKeyboardController.current
-            val drawerState = rememberDrawerState(DrawerValue.Closed) {
-                keyboardController?.hide()
-                true
-            }
             val appNavigator = rememberNavController()
             val mainNavigator = rememberNavController()
             val loginNav = rememberNavController()
@@ -80,17 +79,8 @@ class MainActivity : ComponentActivity() {
                     Toast.makeText(this@MainActivity, it, Toast.LENGTH_LONG).show()
                 }
             }
-            val drawerViewModel: DrawerViewModel = viewModel {
-                DrawerViewModel(mainNavigator, GroupRepository(), UserRepository(), drawerState, appViewModel)
-            }
             val loginViewModel = viewModel {
                 LoginViewModel(loginNavigator = loginNav, appNavigator = appViewModel.appNavigator, dataStore = appViewModel.dataStore, makeToast = { Toast.makeText(this@MainActivity, it, Toast.LENGTH_LONG).show() }, appViewModel = appViewModel)
-            }
-            val searchViewModel: SearchViewModel = viewModel {
-                SearchViewModel(UserRepository(), drawerViewModel.drawerState ,appViewModel)
-            }
-            val messageViewModel: MessageViewModel = viewModel {
-                MessageViewModel(GroupRepository(),  drawerViewModel.mainNavigator, this@MainActivity::messageNotification, appViewModel)
             }
             val homeViewModel: HomeViewModel = viewModel {
                 HomeViewModel(UserRepository(), appViewModel)
@@ -102,7 +92,7 @@ class MainActivity : ComponentActivity() {
                             Splash()
                         }
                         composable(Screen.AppScreen.route){
-                            Main(drawerViewModel, appViewModel, homeViewModel, messageViewModel, searchViewModel)
+                            Main(appViewModel, homeViewModel, this@MainActivity::messageNotification)
                         }
                         composable(Screen.LoginRegisterScreen.route){
                             LoginRegister(loginViewModel)
