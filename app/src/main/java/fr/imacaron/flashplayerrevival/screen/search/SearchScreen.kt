@@ -6,10 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.HourglassEmpty
-import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,9 +15,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import fr.imacaron.flashplayerrevival.R
-import fr.imacaron.flashplayerrevival.TopBar
-import fr.imacaron.flashplayerrevival.data.dto.out.SearchResponse
 import fr.imacaron.flashplayerrevival.components.RoundedTextField
+import fr.imacaron.flashplayerrevival.data.dto.out.SearchResponse
 import fr.imacaron.flashplayerrevival.state.viewmodel.SearchViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -71,4 +67,22 @@ fun UserLine(user: SearchResponse, searchViewModel: SearchViewModel){
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TopBar(title: String, nav: () -> Unit){
+    TopAppBar(
+        { Text(title) },
+        navigationIcon = {
+            IconButton(nav){
+                Icon(Icons.Default.Menu, "Nav")
+            }
+        },
+        actions = {
+            IconButton({}){
+                Icon(Icons.Default.Person, "Profile")
+            }
+        }
+    )
 }

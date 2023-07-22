@@ -15,10 +15,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.SignalCellularConnectedNoInternet0Bar
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -144,17 +145,4 @@ class MainActivity : ComponentActivity() {
             notify(0, builder.build())
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopBar(title: String, nav: () -> Unit){
-    TopAppBar(
-        { Text(title) },
-        navigationIcon = {
-            IconButton(nav){
-                Icon(Icons.Default.Menu, "Nav")
-            }
-        }
-    )
 }

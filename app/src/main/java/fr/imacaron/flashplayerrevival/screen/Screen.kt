@@ -15,6 +15,8 @@ sealed class Screen(val route: String) {
 
     object SearchScreen: Screen("search")
 
+    object ProfileScreen: Screen("profile")
+
     class MessageScreen(id: UUID): Screen("message/$id"){
         companion object {
             const val paramName: String = "id"

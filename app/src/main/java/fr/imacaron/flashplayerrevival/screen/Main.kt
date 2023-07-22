@@ -18,6 +18,7 @@ import fr.imacaron.flashplayerrevival.data.repository.UserRepository
 import fr.imacaron.flashplayerrevival.screen.drawer.NavDrawerSheet
 import fr.imacaron.flashplayerrevival.screen.home.HomeScreen
 import fr.imacaron.flashplayerrevival.screen.message.MessageContainer
+import fr.imacaron.flashplayerrevival.screen.search.ProfileScreen
 import fr.imacaron.flashplayerrevival.screen.search.SearchScreen
 import fr.imacaron.flashplayerrevival.state.viewmodel.*
 import java.util.*
@@ -40,6 +41,9 @@ fun Main(appViewModel: AppViewModel, homeViewModel: HomeViewModel, messageNotifi
     val messageViewModel: MessageViewModel = viewModel {
         MessageViewModel(GroupRepository(),  drawerViewModel.mainNavigator, messageNotification, appViewModel)
     }
+    val profileViewModel: ProfileViewModel = viewModel {
+        ProfileViewModel(appViewModel.self, drawerViewModel)
+    }
     ModalNavigationDrawer({
         NavDrawerSheet(drawerViewModel, appViewModel)
     }, drawerState = drawerViewModel.drawerState){
@@ -51,12 +55,15 @@ fun Main(appViewModel: AppViewModel, homeViewModel: HomeViewModel, messageNotifi
                 Screen.MessageScreen.navRoute,
                 listOf(navArgument(Screen.MessageScreen.paramName) { type = NavType.StringType })
             ) { backStack ->
-                val id = backStack.arguments?.getString("groupId")
+                val id = backStack.arguments?.getString(Screen.MessageScreen.paramName)
                 messageViewModel.currentGroup = UUID.fromString(id)
                 MessageContainer(appViewModel, drawerViewModel, messageViewModel)
             }
             composable(Screen.SearchScreen.route){
                 SearchScreen(searchViewModel)
+            }
+            composable(Screen.ProfileScreen.route) {
+                ProfileScreen(profileViewModel)
             }
         }
     }

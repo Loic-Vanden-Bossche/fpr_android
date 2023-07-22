@@ -6,9 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,7 +17,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
-import fr.imacaron.flashplayerrevival.TopBar
+import fr.imacaron.flashplayerrevival.R
 import fr.imacaron.flashplayerrevival.components.pullrefresh.PullRefreshIndicator
 import fr.imacaron.flashplayerrevival.components.pullrefresh.pullRefresh
 import fr.imacaron.flashplayerrevival.components.pullrefresh.rememberPullRefreshState
@@ -47,15 +45,15 @@ fun HomeScreen(drawerViewModel: DrawerViewModel, homeViewModel: HomeViewModel){
         }
     }
     Scaffold(
-        topBar = { TopBar(stringResource(fr.imacaron.flashplayerrevival.R.string.app_name)) { scope.launch { drawerViewModel.drawerState.open() }} }) {
+        topBar = { TopBar(stringResource(R.string.app_name), drawerViewModel) { scope.launch { drawerViewModel.drawerState.open() }} }) {
         Surface(
             Modifier.fillMaxSize().padding(it),
             color = MaterialTheme.colorScheme.background
         ) {
             Column {
                 TabRow(homeViewModel.tab){
-                    Tab(homeViewModel.tab == 0, { homeViewModel.tab = 0 }, text = { Text("Friends") })
-                    Tab(homeViewModel.tab == 1, { homeViewModel.tab = 1}, text = { Text("Pending") })
+                    Tab(homeViewModel.tab == 0, { homeViewModel.tab = 0 }, text = { Text(stringResource(R.string.friends)) })
+                    Tab(homeViewModel.tab == 1, { homeViewModel.tab = 1}, text = { Text(stringResource(R.string.pending)) })
                 }
                 Box(Modifier.weight(1f).pullRefresh(pullState)) {
                     LazyColumn(Modifier.fillMaxSize()) {
@@ -85,7 +83,11 @@ fun HomeScreen(drawerViewModel: DrawerViewModel, homeViewModel: HomeViewModel){
 fun PendingLine(pending: UserResponse, homeViewModel: HomeViewModel){
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Surface(Modifier.padding(all = 20.dp), shape = CircleShape, color = MaterialTheme.colorScheme.background) {
-            Image(painterResource(fr.imacaron.flashplayerrevival.R.drawable.logo), null, Modifier.size(56.dp))
+            if(pending.picture){
+                Image(rememberAsyncImagePainter("https://medias.flash-player-revival.net/p/${pending.id}"), null, Modifier.size(56.dp))
+            }else{
+                Image(painterResource(fr.imacaron.flashplayerrevival.R.drawable.logo), null, Modifier.size(56.dp))
+            }
         }
         Text(pending.nickname)
         Text(pending.email)
@@ -113,4 +115,23 @@ fun FriendLine(friend: UserResponse, homeViewModel: HomeViewModel){
             Icon(Icons.Default.Delete, null)
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TopBar(title: String, drawerViewModel: DrawerViewModel, nav: () -> Unit){
+    val scope = rememberCoroutineScope()
+    TopAppBar(
+        { Text(title) },
+        navigationIcon = {
+            IconButton(nav){
+                Icon(Icons.Default.Menu, "Nav")
+            }
+        },
+        actions = {
+            IconButton({ scope.launch { drawerViewModel.navigateToProfile() } }){
+                Icon(Icons.Default.Person, "Profile")
+            }
+        }
+    )
 }

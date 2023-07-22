@@ -25,4 +25,10 @@
 	<string name="create">Créer</string>
 	<string name="send">Envoyer</string>
     <string name="search_user">Rechercher un utilisateur</string>
+    <string name="profile">Profil</string>
+	<string name="pick_image">Choisir une image</string>
+	<string name="picture">Image de profil</string>
+	<string name="friends">Amis</string>
+	<string name="pending">En attente</string>
+    <string name="save">Sauvegarder</string>
 </resources>

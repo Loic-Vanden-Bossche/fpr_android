@@ -24,7 +24,7 @@ class DrawerViewModel(
 	private val groupRepository: GroupRepository,
 	private val userRepository: UserRepository,
 	val drawerState: DrawerState,
-	private val appViewModel: AppViewModel
+	val appViewModel: AppViewModel
 ) : ViewModel() {
 	var selected: String by mutableStateOf("")
 
@@ -52,6 +52,11 @@ class DrawerViewModel(
 	suspend fun navigateToMessage(id: UUID) {
 		mainNavigator.navigateUp()
 		mainNavigator.navigate(Screen.MessageScreen(id).route)
+		drawerState.close()
+	}
+
+	suspend fun navigateToProfile() {
+		mainNavigator.navigate(Screen.ProfileScreen.route)
 		drawerState.close()
 	}
 

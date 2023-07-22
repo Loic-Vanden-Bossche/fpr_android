@@ -25,4 +25,10 @@
 	<string name="create">Create</string>
 	<string name="send">Send</string>
     <string name="search_user">Search user</string>
+    <string name="profile">Profile</string>
+	<string name="pick_image">Pick Image</string>
+	<string name="picture">Profile picture</string>
+	<string name="friends">Friends</string>
+	<string name="pending">Pending</string>
+    <string name="save">Save</string>
 </resources>
