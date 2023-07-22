@@ -1,5 +1,6 @@
 package fr.imacaron.flashplayerrevival.screen.home
 
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -22,14 +24,16 @@ import fr.imacaron.flashplayerrevival.components.pullrefresh.PullRefreshIndicato
 import fr.imacaron.flashplayerrevival.components.pullrefresh.pullRefresh
 import fr.imacaron.flashplayerrevival.components.pullrefresh.rememberPullRefreshState
 import fr.imacaron.flashplayerrevival.data.dto.out.UserResponse
+import fr.imacaron.flashplayerrevival.screen.Screen
 import fr.imacaron.flashplayerrevival.state.viewmodel.DrawerViewModel
 import fr.imacaron.flashplayerrevival.state.viewmodel.HomeViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.*
 
 @Composable
-fun HomeScreen(drawerViewModel: DrawerViewModel, homeViewModel: HomeViewModel){
+fun HomeScreen(drawerViewModel: DrawerViewModel, homeViewModel: HomeViewModel, intent: Intent){
     val scope = rememberCoroutineScope()
     val pullState = rememberPullRefreshState(homeViewModel.refresh, {
         homeViewModel.refresh = true
@@ -42,6 +46,13 @@ fun HomeScreen(drawerViewModel: DrawerViewModel, homeViewModel: HomeViewModel){
             homeViewModel.getAllFriend()
             homeViewModel.getAllPending()
             drawerViewModel.reload != drawerViewModel.reload
+        }
+    }
+    LaunchedEffect(Unit){
+        intent.extras?.let {
+            it.getString("group")?.let { data ->
+                drawerViewModel.mainNavigator.navigate(Screen.MessageScreen(UUID.fromString(data)).route)
+            }
         }
     }
     Scaffold(
@@ -84,7 +95,7 @@ fun PendingLine(pending: UserResponse, homeViewModel: HomeViewModel){
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Surface(Modifier.padding(all = 20.dp), shape = CircleShape, color = MaterialTheme.colorScheme.background) {
             if(pending.picture){
-                Image(rememberAsyncImagePainter("https://medias.flash-player-revival.net/p/${pending.id}"), null, Modifier.size(56.dp))
+                Image(rememberAsyncImagePainter("https://medias.flash-player-revival.net/p/${pending.id}"), null, Modifier.size(56.dp), contentScale = ContentScale.Crop)
             }else{
                 Image(painterResource(R.drawable.logo), null, Modifier.size(56.dp))
             }
@@ -105,7 +116,7 @@ fun FriendLine(friend: UserResponse, homeViewModel: HomeViewModel){
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Surface(Modifier.padding(all = 20.dp), shape = CircleShape, color = MaterialTheme.colorScheme.background) {
             if(friend.picture){
-                Image(rememberAsyncImagePainter("https://medias.flash-player-revival.net/p/${friend.id}"), null, Modifier.size(56.dp))
+                Image(rememberAsyncImagePainter("https://medias.flash-player-revival.net/p/${friend.id}"), null, Modifier.size(56.dp), contentScale = ContentScale.Crop)
             }else{
                 Image(painterResource(R.drawable.logo), null, Modifier.size(56.dp))
             }

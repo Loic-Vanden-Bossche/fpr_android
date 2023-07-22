@@ -10,5 +10,6 @@ data class SearchResponse(
     val id: UUID,
     val email: String,
     val nickname: String,
-    val status: String?
+    val status: String?,
+    val picture: Boolean
 )

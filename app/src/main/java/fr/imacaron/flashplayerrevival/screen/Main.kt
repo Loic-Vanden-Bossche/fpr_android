@@ -1,5 +1,6 @@
 package fr.imacaron.flashplayerrevival.screen
 
+import android.content.Intent
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
@@ -25,7 +26,7 @@ import java.util.*
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun Main(appViewModel: AppViewModel, homeViewModel: HomeViewModel, messageNotification: (ReceivedMessage) -> Unit){
+fun Main(appViewModel: AppViewModel, homeViewModel: HomeViewModel, messageNotification: (ReceivedMessage) -> Unit, intent: Intent){
     val keyboardController = LocalSoftwareKeyboardController.current
     val drawerState = rememberDrawerState(DrawerValue.Closed) {
         keyboardController?.hide()
@@ -49,7 +50,7 @@ fun Main(appViewModel: AppViewModel, homeViewModel: HomeViewModel, messageNotifi
     }, drawerState = drawerViewModel.drawerState){
         NavHost(drawerViewModel.mainNavigator, "home"){
             composable(Screen.HomeScreen.route) {
-                HomeScreen(drawerViewModel, homeViewModel)
+                HomeScreen(drawerViewModel, homeViewModel, intent)
             }
             composable(
                 Screen.MessageScreen.navRoute,

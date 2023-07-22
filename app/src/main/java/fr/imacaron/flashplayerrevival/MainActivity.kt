@@ -20,7 +20,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -29,10 +28,16 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.work.OneTimeWorkRequest
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import fr.imacaron.flashplayerrevival.data.dto.out.ReceivedMessage
 import fr.imacaron.flashplayerrevival.data.repository.UserRepository
 import fr.imacaron.flashplayerrevival.screen.Main
@@ -43,6 +48,7 @@ import fr.imacaron.flashplayerrevival.state.viewmodel.AppViewModel
 import fr.imacaron.flashplayerrevival.state.viewmodel.HomeViewModel
 import fr.imacaron.flashplayerrevival.state.viewmodel.LoginViewModel
 import fr.imacaron.flashplayerrevival.ui.theme.FlashPlayerRevivalTheme
+import fr.imacaron.flashplayerrevival.workers.MessageWorker
 
 const val CHANNEL_ID = "a4c16ebd-8f12-4f43-8b87-6ad7d47a8f03"
 
@@ -58,17 +64,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         createNotificationChannel()
+        ProcessLifecycleOwner.get().lifecycle.addObserver(AppLifeCycleListener(this::startListening, this::stopListening))
         setContent {
             val appNavigator = rememberNavController()
-            val mainNavigator = rememberNavController()
             val loginNav = rememberNavController()
-            LaunchedEffect(Unit){
-                intent.extras?.let {
-                    it.getString("group")?.let { data ->
-                        mainNavigator.navigate("message/$data")
-                    }
-                }
-            }
             val appViewModel: AppViewModel = viewModel {
                 AppViewModel(dataStore, UserRepository(), appNavigator) {
                     Toast.makeText(this@MainActivity, it, Toast.LENGTH_LONG).show()
@@ -87,7 +86,7 @@ class MainActivity : ComponentActivity() {
                             Splash()
                         }
                         composable(Screen.AppScreen.route){
-                            Main(appViewModel, homeViewModel, this@MainActivity::messageNotification)
+                            Main(appViewModel, homeViewModel, this@MainActivity::messageNotification, intent)
                         }
                         composable(Screen.LoginRegisterScreen.route){
                             LoginRegister(loginViewModel)
@@ -106,7 +105,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun createNotificationChannel(){
+    fun createNotificationChannel(){
         val name = getString(R.string.channel_name)
         val descriptionText = getString(R.string.channel_desc)
         val importance = NotificationManager.IMPORTANCE_DEFAULT
@@ -117,6 +116,13 @@ class MainActivity : ComponentActivity() {
     }
 
     fun messageNotification(message: ReceivedMessage){
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        with(notificationManager){
+            notify(0, buildNotification(message))
+        }
+    }
+
+    fun buildNotification(message: ReceivedMessage): Notification{
         val intent = Intent(this, MainActivity::class.java).apply {
             putExtras(bundleOf("group" to message.group.toString()))
         }
@@ -134,9 +140,33 @@ class MainActivity : ComponentActivity() {
             builder
                 .setContentText(message.message)
         }
-        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        with(notificationManager){
-            notify(0, builder.build())
+        return builder.build()
+    }
+
+    private var work: OneTimeWorkRequest? = null
+
+    private fun startListening() {
+        if(work == null){
+            work = OneTimeWorkRequestBuilder<MessageWorker>().build()
+            work?.let {
+                WorkManager.getInstance(this).enqueue(it)
+            }
         }
+    }
+
+    private fun stopListening() {
+        work?.let {
+            WorkManager.getInstance(this).cancelWorkById(it.id)
+        }
+    }
+}
+
+class AppLifeCycleListener(private val startListening: () -> Unit, private val stopListening: () -> Unit): DefaultLifecycleObserver {
+    override fun onStart(owner: LifecycleOwner) {
+        stopListening()
+    }
+
+    override fun onStop(owner: LifecycleOwner) {
+        startListening()
     }
 }
