@@ -64,7 +64,6 @@ fun ProfileScreen(profileViewModel: ProfileViewModel){
 						}
 					}
 				} ?: run {
-					println("ICI")
 					AsyncImage(
 						ImageRequest.Builder(context)
 							.data("https://medias.flash-player-revival.net/p/${profileViewModel.self?.id}")
