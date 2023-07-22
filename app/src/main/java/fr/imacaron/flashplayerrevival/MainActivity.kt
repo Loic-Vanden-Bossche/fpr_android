@@ -29,8 +29,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -47,10 +45,6 @@ import fr.imacaron.flashplayerrevival.state.viewmodel.LoginViewModel
 import fr.imacaron.flashplayerrevival.ui.theme.FlashPlayerRevivalTheme
 
 const val CHANNEL_ID = "a4c16ebd-8f12-4f43-8b87-6ad7d47a8f03"
-
-class Test: ViewModelStoreOwner {
-    override val viewModelStore: ViewModelStore = ViewModelStore()
-}
 
 class MainActivity : ComponentActivity() {
 

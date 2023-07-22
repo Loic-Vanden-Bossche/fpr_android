@@ -86,7 +86,7 @@ fun PendingLine(pending: UserResponse, homeViewModel: HomeViewModel){
             if(pending.picture){
                 Image(rememberAsyncImagePainter("https://medias.flash-player-revival.net/p/${pending.id}"), null, Modifier.size(56.dp))
             }else{
-                Image(painterResource(fr.imacaron.flashplayerrevival.R.drawable.logo), null, Modifier.size(56.dp))
+                Image(painterResource(R.drawable.logo), null, Modifier.size(56.dp))
             }
         }
         Text(pending.nickname)
@@ -107,7 +107,7 @@ fun FriendLine(friend: UserResponse, homeViewModel: HomeViewModel){
             if(friend.picture){
                 Image(rememberAsyncImagePainter("https://medias.flash-player-revival.net/p/${friend.id}"), null, Modifier.size(56.dp))
             }else{
-                Image(painterResource(fr.imacaron.flashplayerrevival.R.drawable.logo), null, Modifier.size(56.dp))
+                Image(painterResource(R.drawable.logo), null, Modifier.size(56.dp))
             }
         }
         Text(friend.nickname)
