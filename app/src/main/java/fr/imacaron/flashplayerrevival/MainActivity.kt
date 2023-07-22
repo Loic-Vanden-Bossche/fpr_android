@@ -115,10 +115,13 @@ class MainActivity : ComponentActivity() {
         notificationManager.createNotificationChannel(mChannel)
     }
 
-    fun messageNotification(message: ReceivedMessage){
+    private var id: Int = 0
+
+    private fun messageNotification(message: ReceivedMessage){
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         with(notificationManager){
-            notify(0, buildNotification(message))
+            notify(id, buildNotification(message))
+            id++
         }
     }
 

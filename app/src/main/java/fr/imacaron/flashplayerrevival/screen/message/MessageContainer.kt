@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,11 +24,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.imacaron.flashplayerrevival.R
 import fr.imacaron.flashplayerrevival.components.RoundedTextField
 import fr.imacaron.flashplayerrevival.data.dto.out.MessageResponse
-import fr.imacaron.flashplayerrevival.data.dto.out.MessageResponseType
 import fr.imacaron.flashplayerrevival.data.dto.out.UserMessageResponse
 import fr.imacaron.flashplayerrevival.data.dto.out.UserResponse
 import fr.imacaron.flashplayerrevival.state.viewmodel.AppViewModel
@@ -42,37 +39,11 @@ import java.util.*
 
 @Composable
 fun MessageContainer(appViewModel: AppViewModel, drawerViewModel: DrawerViewModel, messageViewModel: MessageViewModel) {
-	val newMessage by messageViewModel.messageFlow.collectAsStateWithLifecycle(null)
 	val scope = rememberCoroutineScope()
 	val messageState = rememberLazyListState()
 	LaunchedEffect(messageState.canScrollForward) {
 		if (!messageState.canScrollForward && messageViewModel.messages.size >= 20) {
 			messageViewModel.getMessages(messageViewModel.messages.size / 20, 20)
-		}
-	}
-	LaunchedEffect(newMessage) {
-		newMessage?.let { nMessage ->
-			if (nMessage.group == messageViewModel.currentGroup) {
-				when (nMessage.type) {
-					MessageResponseType.EDIT -> {
-						messageViewModel.messages.indexOfFirst { it.id == nMessage.id }.let { index ->
-							if (index != -1) {
-								messageViewModel.messages[index] = nMessage.toMessageResponse()
-							}
-						}
-					}
-
-					MessageResponseType.NEW -> {
-						messageViewModel.messages.add(0, nMessage.toMessageResponse())
-					}
-
-					MessageResponseType.DELETE -> {
-						messageViewModel.messages.removeAll { it.id == nMessage.id }
-					}
-				}
-			} else {
-				messageViewModel.messageNotification(nMessage)
-			}
 		}
 	}
 	Scaffold(

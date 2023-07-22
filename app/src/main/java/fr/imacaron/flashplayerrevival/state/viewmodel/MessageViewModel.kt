@@ -11,13 +11,12 @@ import fr.imacaron.flashplayerrevival.data.api.NoInternetException
 import fr.imacaron.flashplayerrevival.data.api.WebSocketService
 import fr.imacaron.flashplayerrevival.data.dto.out.GroupResponse
 import fr.imacaron.flashplayerrevival.data.dto.out.MessageResponse
+import fr.imacaron.flashplayerrevival.data.dto.out.MessageResponseType
 import fr.imacaron.flashplayerrevival.data.dto.out.ReceivedMessage
 import fr.imacaron.flashplayerrevival.data.repository.GroupRepository
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.*
@@ -28,8 +27,6 @@ class MessageViewModel(
 	val messageNotification: (ReceivedMessage) -> Unit,
 	private val appViewModel: AppViewModel
 ) : ViewModel() {
-
-	private var notificationListener: Job? = null
 
 	val messageFlow: StateFlow<ReceivedMessage?> = WebSocketService.messageFlow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), null)
 
@@ -42,6 +39,34 @@ class MessageViewModel(
 	var title: String by mutableStateOf("")
 
 	var editingTitle: Boolean by mutableStateOf(false)
+
+	suspend fun initNotification() {
+		messageFlow.collect { newMessage ->
+			newMessage?.let { nMessage ->
+				if (nMessage.group == currentGroup) {
+					when (nMessage.type) {
+						MessageResponseType.EDIT -> {
+							messages.indexOfFirst { it.id == nMessage.id }.let { index ->
+								if (index != -1) {
+									messages[index] = nMessage.toMessageResponse()
+								}
+							}
+						}
+
+						MessageResponseType.NEW -> {
+							messages.add(0, nMessage.toMessageResponse())
+						}
+
+						MessageResponseType.DELETE -> {
+							messages.removeAll { it.id == nMessage.id }
+						}
+					}
+				} else {
+					messageNotification(nMessage)
+				}
+			}
+		}
+	}
 
 	var currentGroup: UUID?
 		get() = _currentGroup
@@ -68,30 +93,9 @@ class MessageViewModel(
 	var input: String by mutableStateOf("")
 
 	init {
-		connectNotificationListener()
 		mainNavigator.addOnDestinationChangedListener { _, destination, _ ->
-			if(destination.route?.startsWith("message") == true){
-				disconnectNotificationListener()
-			}else {
-				connectNotificationListener()
-			}
+			messages.clear()
 		}
-	}
-
-	private fun connectNotificationListener(){
-		notificationListener?.cancel()
-		notificationListener = viewModelScope.launch {
-			messageFlow.collectLatest {
-				if(it?.group != currentGroup){
-					it?.let(messageNotification)
-				}
-			}
-		}
-	}
-
-	private fun disconnectNotificationListener(){
-		notificationListener?.cancel()
-		notificationListener = null
 	}
 
 	fun getMessages(page: Int, size: Int){
@@ -154,9 +158,5 @@ class MessageViewModel(
 				}
 			}
 		}
-	}
-
-	override fun onCleared() {
-		disconnectNotificationListener()
 	}
 }

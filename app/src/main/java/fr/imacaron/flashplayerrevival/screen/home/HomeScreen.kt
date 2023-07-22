@@ -24,13 +24,11 @@ import fr.imacaron.flashplayerrevival.components.pullrefresh.PullRefreshIndicato
 import fr.imacaron.flashplayerrevival.components.pullrefresh.pullRefresh
 import fr.imacaron.flashplayerrevival.components.pullrefresh.rememberPullRefreshState
 import fr.imacaron.flashplayerrevival.data.dto.out.UserResponse
-import fr.imacaron.flashplayerrevival.screen.Screen
 import fr.imacaron.flashplayerrevival.state.viewmodel.DrawerViewModel
 import fr.imacaron.flashplayerrevival.state.viewmodel.HomeViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.*
 
 @Composable
 fun HomeScreen(drawerViewModel: DrawerViewModel, homeViewModel: HomeViewModel, intent: Intent){
@@ -46,13 +44,6 @@ fun HomeScreen(drawerViewModel: DrawerViewModel, homeViewModel: HomeViewModel, i
             homeViewModel.getAllFriend()
             homeViewModel.getAllPending()
             drawerViewModel.reload != drawerViewModel.reload
-        }
-    }
-    LaunchedEffect(Unit){
-        intent.extras?.let {
-            it.getString("group")?.let { data ->
-                drawerViewModel.mainNavigator.navigate(Screen.MessageScreen(UUID.fromString(data)).route)
-            }
         }
     }
     Scaffold(

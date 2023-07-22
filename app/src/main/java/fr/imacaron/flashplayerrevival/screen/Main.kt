@@ -5,6 +5,7 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -44,6 +45,16 @@ fun Main(appViewModel: AppViewModel, homeViewModel: HomeViewModel, messageNotifi
     }
     val profileViewModel: ProfileViewModel = viewModel {
         ProfileViewModel(appViewModel.self, drawerViewModel)
+    }
+    LaunchedEffect(messageViewModel){
+        messageViewModel.initNotification()
+    }
+    LaunchedEffect(intent){
+        intent.extras?.let {
+            it.getString("group")?.let { data ->
+                drawerViewModel.navigateToMessage(UUID.fromString(data))
+            }
+        }
     }
     ModalNavigationDrawer({
         NavDrawerSheet(drawerViewModel, appViewModel)

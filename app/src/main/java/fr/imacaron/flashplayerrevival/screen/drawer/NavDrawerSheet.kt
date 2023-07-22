@@ -59,9 +59,8 @@ fun NavDrawerSheet(drawerViewModel: DrawerViewModel, appViewModel: AppViewModel)
                             SelectedLine(it.name)
                         }else{
                             Line(it.name){
-                                drawerViewModel.selected = it.id
                                 scope.launch {
-                                    drawerViewModel.drawerState.close()
+                                    drawerViewModel.selected = it.id
                                     drawerViewModel.navigateToMessage(UUID.fromString(it.id))
                                 }
                             }
