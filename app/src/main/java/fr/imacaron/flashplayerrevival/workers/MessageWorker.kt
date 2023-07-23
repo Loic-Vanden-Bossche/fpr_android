@@ -15,7 +15,6 @@ class MessageWorker(context: Context, workerParams: WorkerParameters): Coroutine
 	private var ids: Int = 0
 
 	override suspend fun doWork(): Result {
-		(applicationContext as MainActivity).createNotificationChannel()
 		WebSocketService.messageFlow.onEach { msg ->
 			createForegroundInfo(msg)?.let {
 				setForeground(it)
