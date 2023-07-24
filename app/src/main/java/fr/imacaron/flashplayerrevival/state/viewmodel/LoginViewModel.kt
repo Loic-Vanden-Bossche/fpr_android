@@ -88,7 +88,9 @@ class LoginViewModel(
                     settings[MainActivity.passwordKey] = password
                     settings[MainActivity.tokenKey] = token.token
                 }
-                appNavigator.navigate(Screen.AppScreen.route)
+                withContext(Dispatchers.Main){
+                    appNavigator.navigate(Screen.AppScreen.route)
+                }
             }catch (e: NoInternetException){
                 appViewModel.noConnection = true
             }catch (e: Exception){
