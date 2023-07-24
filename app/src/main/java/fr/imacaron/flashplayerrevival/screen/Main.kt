@@ -1,12 +1,19 @@
 package fr.imacaron.flashplayerrevival.screen
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -25,9 +32,11 @@ import fr.imacaron.flashplayerrevival.screen.search.SearchScreen
 import fr.imacaron.flashplayerrevival.state.viewmodel.*
 import java.util.*
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun Main(appViewModel: AppViewModel, homeViewModel: HomeViewModel, messageNotification: (ReceivedMessage) -> Unit, intent: Intent){
+    val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val drawerState = rememberDrawerState(DrawerValue.Closed) {
         keyboardController?.hide()
@@ -54,6 +63,12 @@ fun Main(appViewModel: AppViewModel, homeViewModel: HomeViewModel, messageNotifi
             it.getString("group")?.let { data ->
                 drawerViewModel.navigateToMessage(UUID.fromString(data))
             }
+        }
+    }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted -> }
+    LaunchedEffect(launcher) {
+        if(context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
     ModalNavigationDrawer({
