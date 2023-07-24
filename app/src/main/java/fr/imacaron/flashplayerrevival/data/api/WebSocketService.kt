@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
 import java.net.ConnectException
+import java.nio.charset.Charset
 import java.util.*
 
 object WebSocketService {
@@ -103,7 +104,8 @@ object WebSocketService {
                         totalSub++
                     }
                     STOMPMethod.SEND -> {
-                        send("SEND\ndestination:/app/${writeMessage.groupId}/messages${writeMessage.destination}\ncontent-length:${writeMessage.message.length+1}\n\n${writeMessage.message}\n")
+                        val msgLength = writeMessage.message.toByteArray(Charset.defaultCharset()).size + 1
+                        send("SEND\ndestination:/app/${writeMessage.groupId}/messages${writeMessage.destination}\ncontent-length:${msgLength}\n\n${writeMessage.message}\n")
                         send(EOF)
                     }
                     else -> throw RuntimeException("Unsupported send of method ${writeMessage.type}")
